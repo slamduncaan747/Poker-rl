@@ -30,13 +30,9 @@ export function BrainTab() {
 
   if (!d) {
     return (
-      <div className="flex flex-col items-center gap-5 px-4 py-12 text-center">
-        <BotAvatar thinking={phase === 'bot'} size={64} />
-        <div className="font-display text-2xl font-semibold text-ink-100">The AI's reasoning appears here</div>
-        <p className="max-w-[300px] text-[13.5px] leading-relaxed text-ink-300">
-          After each of its moves you'll see what it decided, whether it's playing the balanced strategy or adapting to you, and which of your habits
-          it's reacting to.
-        </p>
+      <div className="flex flex-col items-center gap-4 px-4 py-14 text-center">
+        <BotAvatar thinking={phase === 'bot'} size={48} />
+        <div className="font-mono text-[11px] tracking-[0.08em] text-ink-400">ITS REASONING SHOWS HERE</div>
       </div>
     );
   }
@@ -49,8 +45,8 @@ export function BrainTab() {
             <button
               key={x.id}
               onClick={() => setSel(x.id)}
-              className={`rounded-full px-2.5 py-1 text-[11px] ring-1 transition ${
-                x.id === d.id ? 'bg-gold/15 text-gold-hi ring-gold/40' : 'text-ink-400 ring-white/10 hover:text-ink-200'
+              className={`min-h-[30px] border px-2 font-mono text-[10.5px] uppercase tracking-[0.06em] transition ${
+                x.id === d.id ? 'border-ink-100 text-ink-100' : 'border-ink-600 text-ink-400 hover:text-ink-100'
               }`}
             >
               {STREET_NAMES[x.street]} · {x.label}
@@ -73,69 +69,55 @@ function DecisionView({ d, revealed, fromLastHand }: { d: BotDecisionView; revea
   const adapting = ex.tone === 'exploit';
   return (
     <>
-      <div className="flex items-center gap-3">
-        <BotAvatar thinking={false} size={40} />
-        <div>
-          <div className="eyebrow">
-            {fromLastHand ? 'Last hand · ' : ''}
-            {STREET_NAMES[info.street]} decision
-          </div>
-          <div className="font-display text-[26px] font-semibold leading-tight text-ink-100">{d.label}</div>
-        </div>
-      </div>
-
-      <div className={`rounded-2xl p-4 ring-1 ${adapting ? 'bg-exploit/[0.07] ring-exploit/25' : 'bg-white/[0.03] ring-white/10'}`}>
-        <div className="flex items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider ${adapting ? 'bg-exploit/20 text-exploit-hi' : 'bg-gto/15 text-gto-hi'}`}>
-            {adapting ? 'Adapting to you' : 'Balanced play'}
+      <div>
+        <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.08em]">
+          <span className={adapting ? 'text-gold' : 'text-ink-400'}>
+            {fromLastHand ? 'LAST HAND · ' : ''}
+            {STREET_NAMES[info.street].toUpperCase()} · {adapting ? 'ADAPTING' : 'BALANCED'}
           </span>
         </div>
-        <p className="mt-2.5 text-[15px] font-medium leading-snug text-ink-100">{ex.headline}</p>
-        {ex.reasons.length > 0 && (
-          <ul className="mt-3 flex flex-col gap-2">
-            {ex.reasons.map((r) => (
-              <li key={r.stat} className="flex gap-2.5 text-[13px] leading-snug text-ink-300">
-                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-exploit" />
-                {r.sentence}
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="mt-1 text-[22px] font-extrabold leading-tight">{d.label}</div>
+        <p className="mt-1.5 text-[15px] leading-snug text-ink-200">{ex.headline}</p>
+        {ex.reasons.slice(0, 1).map((r) => (
+          <p key={r.stat} className={`mt-2 border-l-2 pl-3 text-[13px] leading-snug ${adapting ? 'border-gold text-ink-300' : 'border-ink-500 text-ink-300'}`}>
+            {r.sentence}
+          </p>
+        ))}
       </div>
 
       {revealed ? (
-        <div className="rounded-2xl bg-white/[0.02] p-4 ring-1 ring-white/[0.06]">
+        <div className="border border-ink-600 p-3.5">
           <div className="mb-3 flex items-baseline justify-between">
-            <div className="eyebrow">How it played this spot</div>
+            <div className="eyebrow">This spot</div>
             <div className="text-[12px] text-ink-300">
               Its hand: <span className="font-semibold text-ink-100">{strengthWord(info.strength)}</span>
             </div>
           </div>
-          <MixBar label="Balanced strategy" values={info.groupBlueprint} />
+          <MixBar label="Balanced" values={info.groupBlueprint} />
           {info.lambda > 0 && <MixBar label="Against you" values={info.groupFinal} />}
           <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-400">
             {GROUPS.map((g, i) => (
               <span key={g} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm" style={{ background: GROUP_COLORS[i] }} />
+                <span className="h-2 w-2" style={{ background: GROUP_COLORS[i] }} />
                 {g}
               </span>
             ))}
           </div>
         </div>
       ) : (
-        <div className="flex items-start gap-3 rounded-2xl bg-white/[0.02] p-4 text-[12.5px] leading-relaxed text-ink-400 ring-1 ring-white/[0.06]">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="mt-0.5 shrink-0 text-gold">
-            <rect x="5" y="11" width="14" height="9" rx="2" />
+        <div className="flex items-center gap-2.5 border border-dashed border-ink-600 px-3 py-2.5 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0" aria-hidden="true">
+            <rect x="5" y="11" width="14" height="9" />
             <path d="M8 11V8a4 4 0 0 1 8 0v3" />
           </svg>
-          Its hand strength and exact odds unlock when the hand ends, so this panel never gives its cards away.
+          ITS HAND UNLOCKS AFTER THE HAND
         </div>
       )}
 
       {revealed && (
         <div>
           <button onClick={() => setDetails((v) => !v)} className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-400 hover:text-ink-200">
-            <span className={`inline-block transition ${details ? 'rotate-90' : ''}`}>›</span> Technical details
+            <span className={`inline-block transition ${details ? 'rotate-90' : ''}`}>›</span> <span className="font-mono text-[10.5px] tracking-[0.08em]">DETAILS</span>
           </button>
           <AnimatePresence>
             {details && (
@@ -177,8 +159,8 @@ function DecisionView({ d, revealed, fromLastHand }: { d: BotDecisionView; revea
 function MixBar({ label, values }: { label: string; values: number[] }) {
   return (
     <div className="mb-2">
-      <div className="mb-1 text-[11.5px] text-ink-300">{label}</div>
-      <div className="flex h-3 gap-[2px] overflow-hidden rounded-full">
+      <div className="mb-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400">{label}</div>
+      <div className="flex h-2.5 gap-[2px] overflow-hidden">
         {values.map((v, i) =>
           v > 0.004 ? (
             <motion.div

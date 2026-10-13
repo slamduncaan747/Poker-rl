@@ -103,13 +103,10 @@ export function ArenaPage() {
 
   return (
     <div className="mx-auto max-w-[1500px] px-4 pb-12 lg:px-6">
-      <div className="mb-6 mt-2 max-w-3xl">
-        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-          The <span className="text-gradient">Arena</span>
-        </h1>
-        <p className="mt-2 text-ink-300">
-          Pick a type of player and watch thousands of hands in seconds. The <span className="text-exploit-hi">Adaptive AI</span> and the{' '}
-          <span className="text-gto-hi">Balanced AI</span> play exactly the same cards from the same seats, so the gap between their results comes from adapting, not from luck.
+      <div className="mb-6 mt-8 max-w-3xl">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Arena</h1>
+        <p className="mt-2 text-[17px] text-ink-300">
+          Same cards. <span className="text-exploit">Adaptive</span> vs <span className="text-gto-hi">balanced</span>.
         </p>
       </div>
 

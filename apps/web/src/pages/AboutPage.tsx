@@ -29,8 +29,8 @@ export function AboutPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 pb-16 lg:px-6">
-      <section className="relative mb-10 mt-4 overflow-hidden rounded-3xl border border-white/5 p-8 sm:p-12" style={{ background: 'radial-gradient(800px 320px at 0% 0%, rgba(214,178,110,0.14), transparent 60%), radial-gradient(800px 300px at 100% 100%, rgba(23,105,74,0.22), transparent 60%), #0c0e0d' }}>
-        <div className="text-[11px] font-semibold uppercase tracking-[0.3em] text-ink-400">How it works</div>
+      <section className="relative mb-10 mt-4 overflow-hidden border border-ink-100 bg-ink-900 p-8 sm:p-12">
+        <div className="eyebrow">How it works</div>
         <h1 className="mt-3 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
           Play the equilibrium. <span className="text-gradient">Then exploit the human.</span>
         </h1>

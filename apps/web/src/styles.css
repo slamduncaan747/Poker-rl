@@ -1,44 +1,54 @@
 @import 'tailwindcss';
 
-/* Layout concept: a private card room — warm black lacquer, emerald felt and
-   champagne-gold hairlines. Serif display for names and results, a clean
-   grotesk for interface text, mono only for the odd figure. */
+/* Layout concept: a drafting table at night — dark graph paper, chalk-white
+   hairlines and a single orange accent. Chivo for interface text, Chivo Mono
+   for labels, numbers and annotations. Square corners, no glows or gradients. */
 @theme {
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Chivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Chivo Mono', ui-monospace, monospace;
+  --font-display: 'Chivo', ui-sans-serif, system-ui, sans-serif;
 
-  /* warm graphite neutrals */
-  --color-ink-950: #070807;
-  --color-ink-900: #0c0e0d;
-  --color-ink-850: #111412;
-  --color-ink-800: #161a18;
-  --color-ink-700: #212623;
-  --color-ink-600: #2f3531;
-  --color-ink-500: #4b524d;
-  --color-ink-400: #7f827a;
-  --color-ink-300: #aba99e;
-  --color-ink-200: #d2cdbf;
-  --color-ink-100: #efe9dc;
+  /* graphite neutrals, chalk at the top */
+  --color-ink-950: #121417;
+  --color-ink-900: #15181b;
+  --color-ink-850: #181b1f;
+  --color-ink-800: #1c2024;
+  --color-ink-700: #2a2e33;
+  --color-ink-600: #343940;
+  --color-ink-500: #5a5f66;
+  --color-ink-400: #8c929a;
+  --color-ink-300: #abafb5;
+  --color-ink-200: #cdcac3;
+  --color-ink-100: #e6e3dc;
 
-  /* series colours validated for CVD separation on the dark surface */
-  --color-gto: #3b8ff0;
-  --color-gto-hi: #8cc0ff;
-  --color-gto-dim: #10325e;
-  --color-exploit: #e85f2a;
-  --color-exploit-hi: #ff9a6b;
-  --color-exploit-dim: #5c230c;
+  /* balanced (cool) vs adaptive (the accent) — separated by hue and lightness */
+  --color-gto: #7fa6d6;
+  --color-gto-hi: #b3cdee;
+  --color-gto-dim: #1d2c40;
+  --color-exploit: #e8743b;
+  --color-exploit-hi: #f2a47c;
+  --color-exploit-dim: #4a2414;
 
-  --color-gold: #d6b26e;
-  --color-gold-hi: #f0d9a4;
-  --color-gold-dim: #5a4520;
-  --color-win: #5fd3a0;
-  --color-loss: #f08a8a;
+  /* the one accent; kept under the old token names so every page follows */
+  --color-gold: #e8743b;
+  --color-gold-hi: #f2a47c;
+  --color-gold-dim: #4a2414;
+  --color-win: #7cc79a;
+  --color-loss: #e8877c;
 
-  --color-fold: #6d83c9;
-  --color-call: #199e70;
-  --color-small: #c98500;
-  --color-big: #e5484d;
+  /* actions, passive to aggressive: dark to bright */
+  --color-fold: #4a4f56;
+  --color-call: #8c929a;
+  --color-small: #e6e3dc;
+  --color-big: #e8743b;
+
+  /* drafting corners */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 6px;
 }
 
 :root {
@@ -71,44 +81,44 @@ body {
   outline-offset: 2px;
 }
 
-/* Ambient background: a single warm pool of light over the table */
+/* Graph paper: 20px minor grid, 100px major grid */
 .app-bg {
-  background:
-    radial-gradient(1100px 520px at 50% -8%, rgba(214, 178, 110, 0.07), transparent 65%),
-    radial-gradient(900px 600px at 30% 110%, rgba(20, 90, 60, 0.10), transparent 60%),
-    var(--color-ink-950);
+  background-color: var(--color-ink-950);
+  background-image:
+    linear-gradient(#20242a 1px, transparent 1px),
+    linear-gradient(90deg, #20242a 1px, transparent 1px),
+    linear-gradient(#181b1f 1px, transparent 1px),
+    linear-gradient(90deg, #181b1f 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
 }
 
+/* Panels: flat sheets with a hairline border */
 .glass {
-  background: linear-gradient(180deg, rgba(25, 29, 27, 0.92), rgba(15, 18, 16, 0.94));
-  border: 1px solid rgba(214, 178, 110, 0.10);
-  box-shadow:
-    0 1px 0 rgba(255, 244, 220, 0.035) inset,
-    0 24px 60px -30px rgba(0, 0, 0, 0.8);
+  background: var(--color-ink-900);
+  border: 1px solid var(--color-ink-600);
 }
 
 .glass-soft {
-  background: rgba(22, 26, 24, 0.7);
-  border: 1px solid rgba(214, 178, 110, 0.08);
+  background: var(--color-ink-900);
+  border: 1px solid #2a2e33;
 }
 
 .hairline {
-  border-color: rgba(214, 178, 110, 0.12);
+  border-color: var(--color-ink-600);
 }
 
 .eyebrow {
+  font-family: var(--font-mono);
   font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-ink-400);
 }
 
+/* formerly a gold gradient; now plain accent text */
 .text-gradient {
-  background: linear-gradient(100deg, var(--color-gold-hi), var(--color-gold) 60%, #b98d4a);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-gold);
 }
 
 .tabular {
@@ -116,45 +126,38 @@ body {
 }
 
 .btn-gold {
-  background: linear-gradient(180deg, #f2dcaa, #d6b26e 55%, #b8904c);
-  color: #241a08;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset, 0 10px 26px -12px rgba(214, 178, 110, 0.7);
+  background: var(--color-gold);
+  color: #1a0e06;
+  font-weight: 800;
 }
 
 .btn-gold:hover:not(:disabled) {
-  filter: brightness(1.06);
+  filter: brightness(1.08);
+}
+
+/* numbered callout balloon */
+.balloon {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* ------------------------------------------------------------------ table */
 
-.table-rail {
-  background:
-    radial-gradient(120% 140% at 50% 0%, #2a2522 0%, #151312 55%, #0a0909 100%);
-  box-shadow:
-    0 50px 90px -40px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(214, 178, 110, 0.22),
-    inset 0 2px 1px rgba(255, 244, 220, 0.08),
-    inset 0 -6px 14px rgba(0, 0, 0, 0.7);
+/* the drawn table: a chalk outline with a dashed construction line around it */
+.table-outline {
+  border: 1.5px solid var(--color-ink-100);
 }
 
-.table-felt {
-  background:
-    radial-gradient(70% 62% at 50% 42%, #17694a 0%, #0f5039 45%, #0a3a2a 80%, #072a1e 100%);
-  box-shadow:
-    inset 0 0 0 1.5px rgba(214, 178, 110, 0.45),
-    inset 0 0 0 7px rgba(0, 0, 0, 0.25),
-    inset 0 20px 60px rgba(0, 0, 0, 0.45),
-    inset 0 -10px 40px rgba(0, 0, 0, 0.35);
-}
-
-.felt-noise {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
-  opacity: 0.55;
-}
-
-.spotlight {
-  background: radial-gradient(50% 45% at 50% 38%, rgba(255, 246, 220, 0.09), transparent 70%);
+.table-guide {
+  border: 1px dashed var(--color-ink-600);
 }
 
 /* ------------------------------------------------------------------ cards */
@@ -165,7 +168,7 @@ body {
 
 .card-inner {
   transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .card-face,
@@ -178,23 +181,10 @@ body {
   transform: rotateY(180deg);
 }
 
-.card-face {
-  background: linear-gradient(160deg, #fffdf8 0%, #f6f1e6 65%, #ebe4d4 100%);
-  box-shadow:
-    0 10px 25px -8px rgba(0, 0, 0, 0.6),
-    0 2px 4px rgba(0, 0, 0, 0.3),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
-}
-
 .card-back-pattern {
-  background:
-    repeating-linear-gradient(45deg, rgba(214, 178, 110, 0.16) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(-45deg, rgba(214, 178, 110, 0.16) 0 1px, transparent 1px 7px),
-    linear-gradient(160deg, #6b1a24, #4a1018 60%, #2c070d);
-  box-shadow:
-    0 10px 25px -8px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 3px #f6f1e6,
-    inset 0 0 0 4.5px rgba(214, 178, 110, 0.8);
+  background-color: var(--color-ink-850);
+  background-image: repeating-linear-gradient(45deg, #2a2e33 0 1px, transparent 1px 6px);
+  border: 1.5px solid var(--color-ink-500);
 }
 
 /* ---------------------------------------------------------------- controls */
@@ -202,34 +192,40 @@ body {
 input[type='range'].slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-gold) var(--fill, 0%), rgba(214, 178, 110, 0.16) var(--fill, 0%));
+  height: 2px;
+  border-radius: 0;
+  background: linear-gradient(90deg, var(--color-gold) var(--fill, 0%), var(--color-ink-500) var(--fill, 0%));
   outline: none;
 }
 
 input[type='range'].slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff6dc, var(--color-gold) 60%, #8a6a30);
-  box-shadow: 0 0 0 4px rgba(214, 178, 110, 0.18), 0 4px 10px rgba(0, 0, 0, 0.5);
+  width: 14px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--color-ink-100);
+  border: 2px solid var(--color-ink-950);
   cursor: pointer;
 }
 
 input[type='range'].slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff7d6, var(--color-gold) 60%, #b45309);
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2), 0 4px 10px rgba(0, 0, 0, 0.5);
+  width: 14px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--color-ink-100);
+  border: 2px solid var(--color-ink-950);
   cursor: pointer;
 }
 
 input[type='range'].slider.slider-exploit {
-  background: linear-gradient(90deg, var(--color-gto), var(--color-exploit) var(--fill, 0%), rgba(214, 178, 110, 0.16) var(--fill, 0%));
+  background: linear-gradient(90deg, var(--color-gold) var(--fill, 0%), var(--color-ink-500) var(--fill, 0%));
+}
+
+/* ruler ticks under a slider */
+.ruler {
+  height: 6px;
+  border-top: 1px solid var(--color-ink-500);
+  background-image: repeating-linear-gradient(90deg, var(--color-ink-500) 0 1px, transparent 1px 10%);
 }
 
 .btn {
@@ -237,14 +233,14 @@ input[type='range'].slider.slider-exploit {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.85rem;
-  font-weight: 600;
-  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s;
+  border-radius: 2px;
+  font-weight: 700;
+  transition: transform 0.12s ease, background 0.2s ease, opacity 0.2s, filter 0.2s;
   user-select: none;
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
+  transform: translateY(1px);
 }
 
 .btn:disabled {
@@ -254,12 +250,9 @@ input[type='range'].slider.slider-exploit {
 
 .kbd {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  padding: 0.05rem 0.35rem;
-  border-radius: 0.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.25);
-  opacity: 0.75;
+  font-size: 0.62rem;
+  font-weight: 400;
+  opacity: 0.6;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -268,8 +261,7 @@ input[type='range'].slider.slider-exploit {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(148, 161, 184, 0.2);
-  border-radius: 999px;
+  background: var(--color-ink-600);
 }
 
 @keyframes shimmer {
@@ -282,23 +274,23 @@ input[type='range'].slider.slider-exploit {
 }
 
 .thinking-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(214, 178, 110, 0.45), transparent);
+  background: linear-gradient(90deg, transparent, rgba(232, 116, 59, 0.6), transparent);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
 
-@keyframes glow-pulse {
+@keyframes blink {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(214, 178, 110, 0.45), 0 0 24px 2px rgba(214, 178, 110, 0.18);
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(214, 178, 110, 0), 0 0 40px 6px rgba(214, 178, 110, 0.3);
+    opacity: 0.35;
   }
 }
 
 .turn-glow {
-  animation: glow-pulse 1.6s ease-in-out infinite;
+  animation: blink 1.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

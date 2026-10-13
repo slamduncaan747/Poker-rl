@@ -127,24 +127,24 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
         {yTicks.map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={W - pad.r} y1={sy(t)} y2={sy(t)} stroke="rgba(148,161,184,0.10)" />
-            <text x={pad.l - 6} y={sy(t) + 3.5} textAnchor="end" fontSize="10" fill="#64738c" className="tabular">
+            <text x={pad.l - 6} y={sy(t) + 3.5} textAnchor="end" fontSize="10" fill="#8c929a" className="tabular">
               {formatY(t)}
             </text>
           </g>
         ))}
         {zeroLine && y0 < 0 && y1 > 0 && <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="rgba(196,205,219,0.35)" />}
         {xTicks.map((t) => (
-          <text key={t} x={sx(logX ? 10 ** t : t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#64738c" className="tabular">
+          <text key={t} x={sx(logX ? 10 ** t : t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#8c929a" className="tabular">
             {formatX(logX ? t : t)}
           </text>
         ))}
         {xLabel && (
-          <text x={(pad.l + W - pad.r) / 2} y={H - 3} textAnchor="middle" fontSize="10" fill="#94a1b8">
+          <text x={(pad.l + W - pad.r) / 2} y={H - 3} textAnchor="middle" fontSize="10" fill="#abafb5">
             {xLabel}
           </text>
         )}
         {yLabel && (
-          <text x={10} y={(pad.t + H - pad.b) / 2} textAnchor="middle" fontSize="10" fill="#94a1b8" transform={`rotate(-90 10 ${(pad.t + H - pad.b) / 2})`}>
+          <text x={10} y={(pad.t + H - pad.b) / 2} textAnchor="middle" fontSize="10" fill="#abafb5" transform={`rotate(-90 10 ${(pad.t + H - pad.b) / 2})`}>
             {yLabel}
           </text>
         )}
@@ -183,7 +183,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
             <line x1={sx(hx)} x2={sx(hx)} y1={pad.t} y2={H - pad.b} stroke="rgba(230,235,242,0.3)" />
             {series.map((s) => {
               const p = s.points.find(([x]) => x === hx);
-              return p ? <circle key={s.name} cx={sx(p[0])} cy={sy(p[1])} r={4.5} fill={s.color} stroke="#0e131e" strokeWidth={2} /> : null;
+              return p ? <circle key={s.name} cx={sx(p[0])} cy={sy(p[1])} r={4.5} fill={s.color} stroke="#15181b" strokeWidth={2} /> : null;
             })}
           </g>
         )}

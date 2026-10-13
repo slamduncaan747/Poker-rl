@@ -1,6 +1,6 @@
-import { describeHand, evaluate } from '@poker-rl/engine';
+import { STREET_NAMES, describeHand, evaluate } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrainTab } from '../components/brain/BrainTab';
 import { ReadTab } from '../components/brain/ReadTab';
 import { SessionTab } from '../components/brain/SessionTab';
@@ -13,76 +13,111 @@ import { HUMAN, usePlay } from '../lib/store';
 
 type Tab = 'brain' | 'read' | 'session';
 
+function useWide() {
+  const q = '(min-width: 1024px)';
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const on = () => setWide(m.matches);
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
+
 export function PlayPage() {
   const [tab, setTab] = useState<Tab>('brain');
+  const wide = useWide();
   return (
-    <div className="mx-auto grid max-w-[1500px] gap-5 px-4 pb-10 pt-5 lg:grid-cols-[minmax(0,1fr)_400px] lg:px-6">
+    <div className="mx-auto grid max-w-[1400px] gap-6 px-4 pb-10 pt-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-6">
       <Welcome />
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <ModeBar />
         <Table />
         <CoachStrip />
-        <ActionBar />
+        {!wide && <ActionBar />}
       </div>
-      <aside className="glass flex min-h-[560px] flex-col rounded-2xl lg:sticky lg:top-[76px] lg:max-h-[calc(100vh-96px)]">
-        <div className="flex items-center justify-between gap-2 border-b border-white/5 p-3">
-          <Segmented<Tab>
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: 'brain', label: "AI's thinking" },
-              { value: 'read', label: 'Your profile' },
-              { value: 'session', label: 'Results' },
-            ]}
-          />
-          <SettingsButton />
+      <aside className="glass flex min-h-[520px] flex-col lg:sticky lg:top-[70px] lg:max-h-[calc(100vh-90px)]">
+        <div role="tablist" aria-label="Panel" className="grid grid-cols-3 border-b border-ink-100 font-mono text-[11px] tracking-[0.08em]">
+          {(
+            [
+              { value: 'brain', label: 'AI' },
+              { value: 'read', label: 'YOU' },
+              { value: 'session', label: 'RESULTS' },
+            ] as Array<{ value: Tab; label: string }>
+          ).map((o, i) => (
+            <button
+              key={o.value}
+              role="tab"
+              aria-selected={tab === o.value}
+              onClick={() => setTab(o.value)}
+              className={`min-h-[42px] ${i > 0 ? 'border-l border-ink-600' : ''} ${tab === o.value ? 'bg-ink-100 font-bold text-ink-950' : 'text-ink-400 hover:text-ink-100'}`}
+            >
+              {o.label}
+            </button>
+          ))}
         </div>
         <div className="scrollbar-thin flex-1 overflow-y-auto p-4">
           <AnimatePresence mode="wait">
-            <motion.div key={tab} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.15 }}>
+            <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
               {tab === 'brain' ? <BrainTab /> : tab === 'read' ? <ReadTab /> : <SessionTab />}
             </motion.div>
           </AnimatePresence>
         </div>
+        {wide && (
+          <div className="border-t border-ink-600 p-3.5">
+            <ActionBar />
+          </div>
+        )}
       </aside>
     </div>
   );
 }
 
-/** The headline control: balanced (GTO) vs adaptive (exploiting) opponent. */
+/** Hand number and street on the left; balanced/adaptive switch and settings on the right. */
 function ModeBar() {
   const lambda = usePlay((s) => s.settings.lambda);
   const setSettings = usePlay((s) => s.setSettings);
+  const handNo = usePlay((s) => s.handNo);
+  const state = usePlay((s) => s.state);
+  const history = usePlay((s) => s.history);
+  usePlay((s) => s.version);
   const adaptive = lambda > 0;
+  const net = history.reduce((a, h) => a + h.net, 0) / 100;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-      <div className="min-w-0">
-        <div className="font-display text-[26px] font-semibold leading-none text-ink-100">Heads-up No-Limit Hold'em</div>
-        <div className="mt-1.5 text-[12.5px] text-ink-400">
-          {adaptive
-            ? 'Adaptive AI: starts balanced, then learns your habits and punishes them.'
-            : 'Balanced AI: plays the equilibrium strategy and never adjusts to you.'}
-        </div>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex border border-ink-600 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
+        <span className="px-2.5 py-1.5">
+          HAND <span className="text-ink-100">{String(handNo).padStart(3, '0')}</span>
+        </span>
+        {state && (
+          <span className="border-l border-ink-600 px-2.5 py-1.5 uppercase text-ink-100">{state.terminal ? 'Done' : STREET_NAMES[state.street]}</span>
+        )}
+        <span className="border-l border-ink-600 px-2.5 py-1.5">
+          SESSION <span className={`tabular ${net > 0 ? 'text-gold' : 'text-ink-100'}`}>{net > 0 ? '+' : ''}{net.toFixed(net % 1 === 0 ? 0 : 1)}</span>
+        </span>
       </div>
-      <div role="radiogroup" aria-label="AI mode" className="inline-flex rounded-full bg-black/40 p-1 ring-1 ring-gold/20">
-        {[
-          { v: 0, label: 'Balanced', dot: 'bg-gto' },
-          { v: 1, label: 'Adaptive', dot: 'bg-exploit' },
-        ].map((o) => {
-          const on = o.v === 0 ? !adaptive : adaptive;
-          return (
-            <button
-              key={o.label}
-              role="radio"
-              aria-checked={on}
-              onClick={() => setSettings({ lambda: o.v })}
-              className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] font-semibold transition ${on ? 'bg-gold/15 text-gold-hi ring-1 ring-gold/40' : 'text-ink-400 hover:text-ink-200'}`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${o.dot}`} />
-              {o.label}
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-2">
+        <div role="radiogroup" aria-label="AI mode" className="flex border border-ink-600 font-mono text-[11px] tracking-[0.08em]">
+          {[
+            { v: 0, label: 'BALANCED' },
+            { v: 1, label: 'ADAPTIVE' },
+          ].map((o) => {
+            const on = o.v === 0 ? !adaptive : adaptive;
+            return (
+              <button
+                key={o.label}
+                role="radio"
+                aria-checked={on}
+                onClick={() => setSettings({ lambda: o.v })}
+                className={`min-h-[36px] px-3 transition ${on ? 'bg-ink-100 font-bold text-ink-950' : 'text-ink-400 hover:text-ink-100'}`}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+        <SettingsButton />
       </div>
     </div>
   );
@@ -108,7 +143,7 @@ function CoachStrip() {
   const requestHint = usePlay((s) => s.requestHint);
   if (!coach || !state) return null;
   const [a, b] = state.holes(HUMAN);
-  const handName = state.board.length >= 3 ? describeHand(evaluate([a, b, ...state.board])) : a >> 2 === b >> 2 ? 'Pocket pair' : (a & 3) === (b & 3) ? 'Suited cards' : 'Unpaired cards';
+  const handName = state.board.length >= 3 ? describeHand(evaluate([a, b, ...state.board])) : a >> 2 === b >> 2 ? 'Pocket pair' : (a & 3) === (b & 3) ? 'Suited' : 'Offsuit';
   const myTurn = phase === 'human';
   const st = equity !== null ? strengthLabel(equity) : null;
   const hintTop = hint
@@ -118,38 +153,32 @@ function CoachStrip() {
         .sort((x, y) => y.p - x.p)
     : [];
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-1 text-[13px]">
-      <span className="text-ink-400">
-        Your hand <span className="ml-1 font-semibold text-ink-100">{handName}</span>
-      </span>
+    <div className="flex min-h-[36px] flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11.5px] tracking-[0.06em] text-ink-400">
+      <span className="uppercase text-ink-100 sm:hidden">{handName}</span>
       {st && (
-        <span className="flex items-center gap-2 text-ink-400" title={`Win chance against a random hand: ${pct(equity!)}`}>
-          Strength
-          <span className="flex gap-[3px]">
+        <span className="flex items-center gap-2" title={`Win chance against a random hand: ${pct(equity!)}`}>
+          STRENGTH
+          <span className="flex border border-ink-500" aria-label={`${st.n} of 5`}>
             {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} className={`h-2.5 w-1.5 rounded-sm ${i <= st.n ? 'bg-gold' : 'bg-white/10'}`} />
+              <span key={i} className={`h-2 w-3.5 ${i > 1 ? 'border-l border-ink-950' : ''} ${i <= st.n ? 'bg-ink-100' : ''}`} />
             ))}
           </span>
-          <span className="font-semibold text-ink-100">{st.word}</span>
         </span>
       )}
-      {myTurn && !hint && (
-        <button onClick={requestHint} className="rounded-full px-3 py-1 text-[12px] font-semibold text-gold-hi ring-1 ring-gold/30 hover:bg-gold/10">
-          Ask the solver
-        </button>
-      )}
       {hint && myTurn && (
-        <span className="flex flex-wrap items-center gap-1.5 text-ink-300">
-          Solver suggests
-          {hintTop.map((x, i) => (
-            <span key={x.c} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-ink-500">{i === hintTop.length - 1 ? 'or sometimes' : ','}</span>}
-              <span className="rounded-full bg-gold/10 px-2.5 py-0.5 font-semibold text-gold-hi ring-1 ring-gold/25" style={{ opacity: 0.6 + 0.4 * x.p }}>
-                {VERB[x.c]}
-              </span>
+        <span className="flex flex-wrap items-center gap-3">
+          <span>SOLVER</span>
+          {hintTop.map((x) => (
+            <span key={x.c} className="uppercase text-gold">
+              {VERB[x.c]} <span className="tabular text-ink-300">{pct(x.p)}</span>
             </span>
           ))}
         </span>
+      )}
+      {myTurn && !hint && (
+        <button onClick={requestHint} className="ml-auto min-h-[34px] border border-dashed border-ink-500 px-3 text-ink-100 hover:border-ink-100">
+          HINT <span className="kbd">H</span>
+        </button>
       )}
     </div>
   );

@@ -34,14 +34,10 @@ export function LabPage() {
   if (!models) return null;
   return (
     <div className="mx-auto max-w-[1500px] px-4 pb-12 lg:px-6">
-      <div className="mb-6 mt-2 max-w-3xl">
-        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-          Strategy <span className="text-gradient">Lab</span>
-        </h1>
-        <p className="mt-2 text-ink-300">
-          Explore the equilibrium the bot computed with Monte Carlo CFR — {models.blueprint.file.meta.infosets.toLocaleString()} information sets trained
-          over {(models.blueprint.file.meta.iterations / 1e6).toFixed(1)}M iterations. This is the <span className="text-gto-hi">GTO layer</span> that every
-          exploit is a deviation from.
+      <div className="mb-6 mt-8 max-w-3xl">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Strategy Lab</h1>
+        <p className="mt-2 font-mono text-[12px] tracking-[0.06em] text-ink-400">
+          THE BALANCED STRATEGY · {(models.blueprint.file.meta.iterations / 1e6).toFixed(0)}M ITERATIONS · {models.blueprint.file.meta.infosets.toLocaleString()} SPOTS
         </p>
       </div>
       <div className="flex flex-col gap-5">
@@ -97,7 +93,7 @@ function PreflopExplorer({ bp }: { bp: Blueprint }) {
           <button
             key={p.id}
             onClick={() => setSc(p)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${sc.id === p.id ? 'bg-gto/20 text-ink-100 ring-gto/50' : 'bg-white/[0.03] text-ink-400 ring-white/5 hover:text-ink-200'}`}
+            className={`min-h-[34px] border px-3 font-mono text-[11px] uppercase tracking-[0.06em] transition ${sc.id === p.id ? 'border-ink-100 bg-ink-100 font-bold text-ink-950' : 'border-ink-600 text-ink-400 hover:text-ink-100'}`}
           >
             {p.label}
           </button>
@@ -105,13 +101,13 @@ function PreflopExplorer({ bp }: { bp: Blueprint }) {
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,620px)_1fr]">
         <div>
-          <div className="grid grid-cols-13 gap-[2px] rounded-xl bg-black/30 p-[2px]" style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }} onPointerLeave={() => setHover(null)}>
+          <div className="grid grid-cols-13 gap-[2px] border border-ink-600 bg-ink-950 p-[2px]" style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }} onPointerLeave={() => setHover(null)}>
             {cells.map((cell, i) => (
               <div
                 key={i}
                 onPointerEnter={() => setHover(i)}
-                className={`relative aspect-square overflow-hidden rounded-[3px] ${hover === i ? 'ring-2 ring-white' : ''}`}
-                style={{ background: '#0a0e17' }}
+                className={`relative aspect-square overflow-hidden ${hover === i ? 'ring-2 ring-gold' : ''}`}
+                style={{ background: '#121417' }}
               >
                 {cell && (
                   <div className="absolute inset-0 flex flex-col-reverse">
@@ -120,7 +116,7 @@ function PreflopExplorer({ bp }: { bp: Blueprint }) {
                     ))}
                   </div>
                 )}
-                <span className="absolute left-[3px] top-[1px] text-[9px] font-bold text-white/90 drop-shadow sm:text-[10.5px]">{handClassLabel(i)}</span>
+                <span className="absolute left-0 top-0 bg-ink-950/80 px-[3px] font-mono text-[9px] font-bold leading-[13px] text-ink-100 sm:text-[10px]">{handClassLabel(i)}</span>
               </div>
             ))}
           </div>
@@ -242,7 +238,7 @@ function PostflopExplorer({ bp }: { bp: Blueprint }) {
           <button
             key={p.id}
             onClick={() => setSc(p)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${sc.id === p.id ? 'bg-gto/20 text-ink-100 ring-gto/50' : 'bg-white/[0.03] text-ink-400 ring-white/5 hover:text-ink-200'}`}
+            className={`min-h-[34px] border px-3 font-mono text-[11px] uppercase tracking-[0.06em] transition ${sc.id === p.id ? 'border-ink-100 bg-ink-100 font-bold text-ink-950' : 'border-ink-600 text-ink-400 hover:text-ink-100'}`}
           >
             {p.label}
           </button>

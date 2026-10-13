@@ -46,8 +46,8 @@ export function RadarChart({ axes, size = 280, color = 'var(--color-exploit)', b
           return (
             <g key={a.label} onPointerEnter={() => setHover(i)} onPointerLeave={() => setHover(null)} className="cursor-default">
               <circle cx={x} cy={y} r={12} fill="transparent" />
-              <circle cx={x} cy={y} r={hover === i ? 5 : 3.5} fill={color} stroke="#0e131e" strokeWidth={2} />
-              <text x={lx} y={ly + 3} textAnchor="middle" fontSize="10.5" fill={hover === i ? '#e6ebf2' : '#94a1b8'} fontWeight={600}>
+              <circle cx={x} cy={y} r={hover === i ? 5 : 3.5} fill={color} stroke="#15181b" strokeWidth={2} />
+              <text x={lx} y={ly + 3} textAnchor="middle" fontSize="10.5" fill={hover === i ? '#e6e3dc' : '#abafb5'} fontWeight={600}>
                 {a.label}
               </text>
             </g>

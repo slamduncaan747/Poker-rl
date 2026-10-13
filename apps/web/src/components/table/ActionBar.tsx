@@ -15,16 +15,17 @@ const PRESETS: Array<{ label: string; key: string; frac: number | 'min' | 'all' 
 
 /** Action colours: passive → aggressive (validated palette; always paired with labels). */
 export const CODE_COLORS: Record<Code, string> = {
-  f: '#6d83c9',
-  k: '#199e70',
-  c: '#199e70',
-  t: '#e0a526',
-  h: '#c98500',
-  p: '#e5484d',
-  a: '#b8283a',
+  f: '#4a4f56',
+  k: '#8c929a',
+  c: '#8c929a',
+  t: '#cdcac3',
+  h: '#e6e3dc',
+  p: '#e8743b',
+  a: '#b8542a',
 };
 
-export const GROUP_COLORS = ['#6d83c9', '#199e70', '#c98500', '#e5484d'];
+/** Fold, check/call, small bet, big bet: dark to bright, the accent for the most aggressive. */
+export const GROUP_COLORS = ['#4a4f56', '#8c929a', '#e6e3dc', '#e8743b'];
 
 export function ActionBar() {
   const state = usePlay((s) => s.state);
@@ -32,6 +33,7 @@ export function ActionBar() {
   const phase = usePlay((s) => s.phase);
   const humanAct = usePlay((s) => s.humanAct);
   const newHand = usePlay((s) => s.newHand);
+  const requestHint = usePlay((s) => s.requestHint);
   const myTurn = phase === 'human' && state && !state.terminal && state.toAct === HUMAN;
 
   const toCall = state && myTurn ? state.toCall(HUMAN) : 0;
@@ -73,7 +75,8 @@ export function ActionBar() {
         return;
       }
       if (!myTurn) return;
-      if (k === 'f') doFold();
+      if (k === 'h') requestHint();
+      else if (k === 'f') doFold();
       else if (k === 'c' || k === 'k') doCall();
       else if (k === 'r' || k === 'b') doRaise();
       else if (k === 'a') doRaise(maxTo);
@@ -93,47 +96,44 @@ export function ActionBar() {
     return (to - cur) / (state.pot + toCall);
   }, [state, to, toCall, minTo]);
 
+  const toCallLabel = toCall > 0 ? `Call ${bb(toCall)}` : 'Check';
+  const raiseLabel = `${to >= maxTo ? 'All-in' : raiseWord === 'Bet' ? 'Bet' : 'Raise'} ${bb(to)}`;
+
   return (
-    <div className="glass relative rounded-2xl p-3 sm:p-4">
+    <div className="relative flex flex-col gap-3">
+      <GradeLine />
       <AnimatePresence mode="wait">
         {myTurn ? (
-          <motion.div key="act" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="grid grid-cols-3 gap-2 lg:w-[400px] lg:shrink-0">
-              <button onClick={doFold} disabled={toCall === 0} title="Fold (F)" className="btn border border-white/10 bg-white/[0.03] py-3.5 text-sm text-ink-200 hover:bg-white/[0.07]">
-                Fold
-              </button>
-              <button onClick={doCall} title="Check / call (C)" className="btn border border-[#5fd3a0]/30 bg-[#123d2e] py-3.5 text-sm text-[#d5f5e8] hover:bg-[#16503b]">
-                {toCall > 0 ? `Call ${bb(toCall)}` : 'Check'}
-              </button>
-              <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold py-3.5 text-sm">
-                {to >= maxTo ? 'All-in' : raiseWord} {bb(to)}
-              </button>
-            </div>
+          <motion.div key="act" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2.5">
             {minTo !== null && (
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    className="slider flex-1"
-                    min={minTo}
-                    max={maxTo}
-                    step={10}
-                    value={to}
-                    style={{ ['--fill' as string]: `${fill}%` }}
-                    onChange={(e) => setTo(Number(e.target.value))}
-                    aria-label="Raise amount"
-                  />
-                  <div className="tabular w-[92px] text-right text-sm font-semibold text-gold-hi">
-                    {bb(to)} bb
-                    <div className="text-[10px] font-normal text-ink-400">{pct(potFrac)} of pot</div>
-                  </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-baseline justify-between font-mono text-[11px] tracking-[0.06em]">
+                  <label htmlFor="raise-to" className="text-ink-400">
+                    {raiseWord === 'Bet' ? 'BET' : 'RAISE TO'}
+                  </label>
+                  <span className="tabular text-ink-100">
+                    {bb(to)} <span className="text-ink-400">· {pct(potFrac)} POT</span>
+                  </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {PRESETS.map((p) => (
+                <input
+                  id="raise-to"
+                  type="range"
+                  className="slider w-full"
+                  min={minTo}
+                  max={maxTo}
+                  step={10}
+                  value={to}
+                  style={{ ['--fill' as string]: `${fill}%` }}
+                  onChange={(e) => setTo(Number(e.target.value))}
+                />
+                <div className="ruler" aria-hidden="true" />
+                <div className="grid grid-cols-6 font-mono text-[11px]">
+                  {PRESETS.map((p, i) => (
                     <button
                       key={p.label}
                       onClick={() => setTo(presetTo(p.frac))}
-                      className="btn rounded-lg bg-white/[0.04] px-3 py-1 text-xs text-ink-200 ring-1 ring-white/10 hover:bg-white/10"
+                      title={`${p.label} (${p.key})`}
+                      className={`min-h-[32px] uppercase text-ink-400 hover:text-ink-100 ${i === 0 ? 'text-left' : i === PRESETS.length - 1 ? 'text-right' : ''}`}
                     >
                       {p.label}
                     </button>
@@ -141,74 +141,72 @@ export function ActionBar() {
                 </div>
               </div>
             )}
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={doFold} disabled={toCall === 0} title="Fold (F)" className="btn min-h-[48px] border border-ink-100 text-[15px] hover:bg-ink-800">
+                Fold <span className="kbd">F</span>
+              </button>
+              <button onClick={doCall} title="Check / call (C)" className="btn min-h-[48px] border border-ink-100 text-[15px] hover:bg-ink-800">
+                {toCallLabel} <span className="kbd">C</span>
+              </button>
+            </div>
+            <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold min-h-[54px] text-[17px]">
+              {raiseLabel} <span className="kbd">R</span>
+            </button>
           </motion.div>
         ) : (
-          <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex h-[52px] items-center justify-between gap-3 px-1">
+          <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2.5">
             <WaitingText />
             {(phase === 'idle' || phase === 'over') && (
-              <button onClick={newHand} className="btn btn-gold px-6 py-2.5 text-sm">
-                {phase === 'idle' ? 'Deal' : 'Next hand'}
+              <button onClick={newHand} className="btn btn-gold min-h-[54px] text-[17px]">
+                {phase === 'idle' ? 'Deal' : 'Next hand'} <span className="kbd">SPACE</span>
               </button>
             )}
           </motion.div>
         )}
       </AnimatePresence>
-      <GradeToast />
     </div>
   );
 }
 
 function WaitingText() {
   const phase = usePlay((s) => s.phase);
-  if (phase === 'bot')
-    return (
-      <div className="flex items-center gap-3 text-sm text-ink-300">
-        <div className="relative h-2 w-28 overflow-hidden rounded-full bg-white/5">
-          <div className="thinking-shimmer absolute inset-0" />
-        </div>
-        Poker RL is thinking…
-      </div>
-    );
-  if (phase === 'over') return <div className="text-sm text-ink-400">Hand complete.</div>;
-  if (phase === 'loading') return <div className="text-sm text-ink-300">Loading models…</div>;
-  return <div className="text-sm text-ink-400">Fair deal · cryptographic shuffle · the AI sees only its own cards</div>;
+  const label = phase === 'bot' ? 'POKER RL IS THINKING' : phase === 'over' ? 'HAND OVER' : phase === 'loading' ? 'LOADING' : phase === 'idle' ? 'READY' : '';
+  if (!label) return <div className="h-[18px]" />;
+  return (
+    <div className="flex min-h-[18px] items-center gap-3 font-mono text-[11px] tracking-[0.08em] text-ink-400">
+      {phase === 'bot' && (
+        <span className="relative h-[2px] w-16 overflow-hidden bg-ink-600">
+          <span className="thinking-shimmer absolute inset-0" />
+        </span>
+      )}
+      {label}
+    </div>
+  );
 }
 
-const GRADE_STYLE: Record<string, string> = {
-  Best: 'bg-[#123d2e] text-[#bfeedd] ring-[#5fd3a0]/30',
-  Good: 'bg-[#123d2e] text-[#bfeedd] ring-[#5fd3a0]/20',
-  Inaccuracy: 'bg-[#3a2a12] text-gold-hi ring-gold/30',
-  Mistake: 'bg-[#3d1a18] text-[#f5c2b8] ring-loss/30',
-  Blunder: 'bg-[#3d1a18] text-[#f5c2b8] ring-loss/40',
+const GRADE: Record<string, { mark: string; text: string; strong: boolean }> = {
+  Best: { mark: '★', text: 'BEST', strong: true },
+  Good: { mark: '✓', text: 'GOOD', strong: false },
+  Inaccuracy: { mark: '?!', text: 'SLIGHTLY OFF', strong: false },
+  Mistake: { mark: '?', text: 'MISTAKE', strong: false },
+  Blunder: { mark: '??', text: 'BIG MISTAKE', strong: false },
 };
 
-const GRADE_TEXT: Record<string, string> = {
-  Best: 'Great play',
-  Good: 'Good play',
-  Inaccuracy: 'Slightly off',
-  Mistake: 'Mistake',
-  Blunder: 'Big mistake',
-};
+const VERB: Record<string, string> = { f: 'fold', k: 'check', c: 'call', t: 'bet ⅓', h: 'bet ½', p: 'bet pot', a: 'all-in' };
 
-const VERB: Record<string, string> = { f: 'fold', k: 'check', c: 'call', t: 'bet small', h: 'bet half pot', p: 'bet pot', a: 'go all-in' };
-
-function GradeToast() {
+/** The coach's verdict on your last decision, in one line. */
+function GradeLine() {
   const grades = usePlay((s) => s.humanGrades);
   const coach = usePlay((s) => s.settings.coach);
   const g = grades[grades.length - 1];
   if (!coach || !g) return null;
+  const v = GRADE[g.label];
   const good = g.label === 'Best' || g.label === 'Good';
   return (
-    <AnimatePresence>
-      <motion.div
-        key={grades.length}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`absolute -top-11 right-3 flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs ring-1 ${GRADE_STYLE[g.label]}`}
-      >
-        <span className="font-bold">{good ? '✓' : '!'} {GRADE_TEXT[g.label]}</span>
-        <span className="opacity-80">{good ? 'matches the solver' : `the solver prefers to ${VERB[g.bestCode] ?? g.bestCode}`}</span>
-      </motion.div>
-    </AnimatePresence>
+    <motion.div key={grades.length} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 font-mono text-[11px] tracking-[0.06em]">
+      <span className={`grid h-5 min-w-5 place-items-center px-1 text-[10px] font-bold ${v.strong ? 'bg-ink-100 text-ink-950' : good ? 'border border-ink-100' : 'border border-dashed border-gold text-gold'}`}>{v.mark}</span>
+      <span className={good ? 'text-ink-100' : 'text-gold'}>{v.text}</span>
+      {!good && <span className="uppercase text-ink-400">· solver: {VERB[g.bestCode] ?? g.bestCode}</span>}
+    </motion.div>
   );
 }
