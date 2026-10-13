@@ -166,7 +166,11 @@ function SeatBar({ seat, state, narrow }: { seat: number; state: HUNLState | nul
   const isBot = seat === BOT;
   const phase = usePlay((s) => s.phase);
   const lambda = usePlay((s) => s.settings.lambda);
-  const stack = state ? state.stacks[seat] : 10_000;
+  const last = usePlay((s) => s.history[s.history.length - 1]);
+  const handNo = usePlay((s) => s.handNo);
+  // Once the hand is settled, show stacks after the pot is paid out (each hand starts at 100 bb).
+  const settled = !!state?.terminal && last?.id === handNo;
+  const stack = settled ? 10_000 + (isBot ? -last.net : last.net) : state ? state.stacks[seat] : 10_000;
   const toAct = !!state && !state.terminal && state.toAct === seat;
   const isButton = state?.button === seat;
   const allIn = !!state && state.stacks[seat] === 0 && !state.terminal;

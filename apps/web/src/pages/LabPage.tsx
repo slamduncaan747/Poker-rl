@@ -1,7 +1,7 @@
 import { type Blueprint, CODE_LABELS, type Code, handClassCombos, handClassLabel } from '@poker-rl/engine';
 import { useMemo, useState } from 'react';
 import { CODE_COLORS } from '../components/table/ActionBar';
-import { Panel, Segmented } from '../components/ui/Controls';
+import { Segmented } from '../components/ui/Controls';
 import { pct } from '../lib/format';
 import { usePlay } from '../lib/store';
 
@@ -33,14 +33,14 @@ export function LabPage() {
   const models = usePlay((s) => s.models);
   if (!models) return null;
   return (
-    <div className="mx-auto max-w-[1500px] px-4 pb-12 lg:px-6">
-      <div className="mb-6 mt-8 max-w-3xl">
+    <div className="mx-auto max-w-[1400px] px-4 pb-12 lg:px-6">
+      <div className="mb-6 mt-8">
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Strategy Lab</h1>
         <p className="mt-2 font-mono text-[12px] tracking-[0.06em] text-ink-400">
           THE BALANCED STRATEGY · {(models.blueprint.file.meta.iterations / 1e6).toFixed(0)}M ITERATIONS · {models.blueprint.file.meta.infosets.toLocaleString()} SPOTS
         </p>
       </div>
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         <PreflopExplorer bp={models.blueprint} />
         <PostflopExplorer bp={models.blueprint} />
       </div>
@@ -50,10 +50,10 @@ export function LabPage() {
 
 function Legend({ codes }: { codes: Code[] }) {
   return (
-    <div className="flex flex-wrap gap-3 text-[11px] text-ink-300">
+    <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-300">
       {codes.map((c) => (
         <span key={c} className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: CODE_COLORS[c] }} />
+          <span className="h-2.5 w-2.5" style={{ background: CODE_COLORS[c], boxShadow: c === 'f' ? 'inset 0 0 0 1px #5a5f66' : undefined }} />
           {CODE_LABELS[c]}
         </span>
       ))}
@@ -61,9 +61,30 @@ function Legend({ codes }: { codes: Code[] }) {
   );
 }
 
+function Tabs<T extends { id: string; label: string }>({ items, value, onChange, label }: { items: T[]; value: T; onChange: (v: T) => void; label: string }) {
+  return (
+    <div role="tablist" aria-label={label} className="flex flex-wrap border-b border-ink-100 font-mono text-[11px] uppercase tracking-[0.06em]">
+      {items.map((p, i) => (
+        <button
+          key={p.id}
+          role="tab"
+          aria-selected={value.id === p.id}
+          onClick={() => onChange(p)}
+          className={`min-h-[42px] px-3.5 transition ${i > 0 ? 'border-l border-ink-600' : ''} ${value.id === p.id ? 'bg-ink-100 font-bold text-ink-950' : 'text-ink-400 hover:text-ink-100'}`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const AKS = Array.from({ length: 169 }, (_, i) => i).find((i) => handClassLabel(i) === 'AKs') ?? 1;
+
 function PreflopExplorer({ bp }: { bp: Blueprint }) {
   const [sc, setSc] = useState(PREFLOP[0]);
   const [hover, setHover] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number>(AKS);
   const cells = useMemo(
     () =>
       Array.from({ length: 169 }, (_, i) => {
@@ -85,94 +106,87 @@ function PreflopExplorer({ bp }: { bp: Blueprint }) {
     return { t, combos };
   }, [cells]);
 
-  const hc = hover !== null ? cells[hover] : null;
+  const shown = hover ?? pinned;
+  const hc = cells[shown];
   return (
-    <Panel title="Preflop range explorer" right={<span className="text-[11px] text-ink-400">hover a hand for exact frequencies</span>}>
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {PREFLOP.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setSc(p)}
-            className={`min-h-[34px] border px-3 font-mono text-[11px] uppercase tracking-[0.06em] transition ${sc.id === p.id ? 'border-ink-100 bg-ink-100 font-bold text-ink-950' : 'border-ink-600 text-ink-400 hover:text-ink-100'}`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,620px)_1fr]">
-        <div>
-          <div className="grid grid-cols-13 gap-[2px] border border-ink-600 bg-ink-950 p-[2px]" style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }} onPointerLeave={() => setHover(null)}>
-            {cells.map((cell, i) => (
-              <div
-                key={i}
-                onPointerEnter={() => setHover(i)}
-                className={`relative aspect-square overflow-hidden ${hover === i ? 'ring-2 ring-gold' : ''}`}
-                style={{ background: '#121417' }}
-              >
-                {cell && (
-                  <div className="absolute inset-0 flex flex-col-reverse">
-                    {cell.map(({ c, p }) => (
-                      <div key={c} style={{ height: `${p * 100}%`, background: CODE_COLORS[c] }} />
-                    ))}
-                  </div>
-                )}
-                <span className="absolute left-0 top-0 bg-ink-950/80 px-[3px] font-mono text-[9px] font-bold leading-[13px] text-ink-100 sm:text-[10px]">{handClassLabel(i)}</span>
-              </div>
-            ))}
+    <section className="glass" aria-label="Preflop ranges">
+      <Tabs items={PREFLOP} value={sc} onChange={setSc} label="Preflop spot" />
+      <div className="grid gap-6 p-4 sm:p-5 xl:grid-cols-[minmax(0,640px)_1fr]">
+        <div className="min-w-0">
+          <div className="overflow-x-auto">
+            <div className="grid min-w-[480px] gap-[2px] border border-ink-600 bg-ink-950 p-[2px]" style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }} onPointerLeave={() => setHover(null)}>
+              {cells.map((cell, i) => (
+                <button
+                  key={i}
+                  onPointerEnter={() => setHover(i)}
+                  onClick={() => setPinned(i)}
+                  aria-label={handClassLabel(i)}
+                  className="relative aspect-square overflow-hidden bg-ink-950 p-0"
+                >
+                  {cell && (
+                    <span className="absolute inset-0 flex flex-col-reverse">
+                      {cell.map(({ c, p }) => (
+                        <span key={c} className="block" style={{ height: `${p * 100}%`, background: CODE_COLORS[c] }} />
+                      ))}
+                    </span>
+                  )}
+                  <span className="absolute left-0 top-0 bg-ink-950/80 px-[3px] font-mono text-[9px] font-bold leading-[13px] text-ink-100 sm:text-[10px]">{handClassLabel(i)}</span>
+                  {(pinned === i || hover === i) && <span className="absolute inset-0" style={{ boxShadow: 'inset 0 0 0 2px #121417, inset 0 0 0 3.5px var(--color-gold)' }} />}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="mt-3">
             <Legend codes={codes} />
           </div>
         </div>
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-ink-300">{sc.desc}</p>
+
+        <div className="flex flex-col gap-5">
+          <div className="border border-ink-100">
+            <div className="flex items-baseline justify-between border-b border-ink-600 px-4 py-3">
+              <span className="text-[44px] font-extrabold leading-none">{handClassLabel(shown)}</span>
+              <span className="text-right font-mono text-[10.5px] tracking-[0.06em] text-ink-400">
+                {handClassCombos(shown)} COMBOS
+                <br />
+                {pct(bp.preflopEquity[shown])} VS RANDOM
+              </span>
+            </div>
+            <div className="px-4 py-3">
+              {hc ? (
+                hc.map(({ c, p }) => (
+                  <div key={c} className="grid grid-cols-[90px_1fr_44px] items-center gap-3 py-1 font-mono text-[11.5px]">
+                    <span className="uppercase text-ink-300">{CODE_LABELS[c]}</span>
+                    <span className="h-[6px] bg-ink-700">
+                      <span className="block h-full" style={{ width: `${p * 100}%`, background: CODE_COLORS[c] }} />
+                    </span>
+                    <span className="tabular text-right">{pct(p)}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="font-mono text-[11px] text-ink-400">NOT REACHED IN TRAINING</div>
+              )}
+            </div>
+          </div>
           <div>
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-ink-400">Overall range (combo-weighted)</div>
-            <div className="flex h-4 overflow-hidden rounded-full">
+            <div className="mb-2 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">WHOLE RANGE</div>
+            <div className="flex h-3.5 border border-ink-500">
               {codes.map((c) => (
-                <div key={c} style={{ width: `${((totals.t[c] ?? 0) / totals.combos) * 100}%`, background: CODE_COLORS[c] }} className="border-r-2 border-ink-900 last:border-r-0" />
+                <div key={c} title={`${CODE_LABELS[c]} ${pct((totals.t[c] ?? 0) / totals.combos, 1)}`} style={{ width: `${((totals.t[c] ?? 0) / totals.combos) * 100}%`, background: CODE_COLORS[c] }} />
               ))}
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-[12px] sm:grid-cols-3">
+            <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[11px] sm:grid-cols-3">
               {codes.map((c) => (
                 <div key={c} className="flex justify-between">
-                  <span className="text-ink-300">{CODE_LABELS[c]}</span>
-                  <span className="tabular font-mono text-ink-100">{pct((totals.t[c] ?? 0) / totals.combos, 1)}</span>
+                  <span className="uppercase text-ink-400">{CODE_LABELS[c]}</span>
+                  <span className="tabular">{pct((totals.t[c] ?? 0) / totals.combos, 0)}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="rounded-xl bg-white/[0.03] p-4 ring-1 ring-white/5">
-            {hover !== null ? (
-              <>
-                <div className="font-display text-2xl font-bold">{handClassLabel(hover)}</div>
-                <div className="mb-3 text-[11px] text-ink-400">
-                  {handClassCombos(hover)} combos · equity vs random {pct(bp.preflopEquity[hover])}
-                </div>
-                {hc ? (
-                  hc.map(({ c, p }) => (
-                    <div key={c} className="grid grid-cols-[80px_1fr_44px] items-center gap-2 py-0.5 text-[12px]">
-                      <span className="text-ink-300">{CODE_LABELS[c]}</span>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                        <div className="h-full rounded-full" style={{ width: `${p * 100}%`, background: CODE_COLORS[c] }} />
-                      </div>
-                      <span className="tabular text-right font-mono text-ink-100">{pct(p)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-ink-400">Not reached in training.</div>
-                )}
-              </>
-            ) : (
-              <div className="text-sm text-ink-400">
-                Mixed colours inside a cell are <em>mixed strategies</em>: the equilibrium randomises between actions with the same hand, so its
-                actions don't give its cards away.
-              </div>
-            )}
-          </div>
+          <p className="border-l-2 border-ink-500 pl-3 text-[13px] text-ink-400">{sc.desc}</p>
         </div>
       </div>
-    </Panel>
+    </section>
   );
 }
 
@@ -184,13 +198,13 @@ interface PostScenario {
 }
 
 const POST: PostScenario[] = [
-  { id: 'oop', label: 'OOP, first to act', pos: 'O', hist: '' },
-  { id: 'ipk', label: 'IP, checked to', pos: 'B', hist: 'k' },
-  { id: 'ipt', label: 'IP vs ⅓-pot bet', pos: 'B', hist: 't' },
-  { id: 'iph', label: 'IP vs ½-pot bet', pos: 'B', hist: 'h' },
-  { id: 'ipp', label: 'IP vs pot bet', pos: 'B', hist: 'p' },
-  { id: 'oopkh', label: 'OOP check, faces ½-pot', pos: 'O', hist: 'kh' },
-  { id: 'oopkp', label: 'OOP check, faces pot', pos: 'O', hist: 'kp' },
+  { id: 'oop', label: 'OOP first', pos: 'O', hist: '' },
+  { id: 'ipk', label: 'IP checked to', pos: 'B', hist: 'k' },
+  { id: 'ipt', label: 'IP vs ⅓', pos: 'B', hist: 't' },
+  { id: 'iph', label: 'IP vs ½', pos: 'B', hist: 'h' },
+  { id: 'ipp', label: 'IP vs pot', pos: 'B', hist: 'p' },
+  { id: 'oopkh', label: 'OOP x, vs ½', pos: 'O', hist: 'kh' },
+  { id: 'oopkp', label: 'OOP x, vs pot', pos: 'O', hist: 'kp' },
 ];
 
 function PostflopExplorer({ bp }: { bp: Blueprint }) {
@@ -209,79 +223,70 @@ function PostflopExplorer({ bp }: { bp: Blueprint }) {
     [bp, street, sc, agg, spr, n],
   );
   const codes = CODE_ORDER.filter((c) => cols.some((x) => x?.some((y) => y.c === c && y.p > 0.005)));
-  const aggLabel = (a: string) => {
-    const me = sc.pos === 'B' ? 'button' : 'big blind';
-    return a === 'm' ? `${me} raised preflop` : a === 'o' ? `${me} called preflop` : 'limped pot';
-  };
   return (
-    <Panel title="Postflop strategy by hand strength">
-      <p className="-mt-2 mb-4 max-w-3xl text-sm text-ink-300">
-        Each column is a group of similar-strength hands (a card-abstraction bucket, by percentile of E[HS²] on the flop and turn and hand strength on
-        the river). Read left to right from the weakest hands to the strongest and watch how the equilibrium mixes checks and bets of different sizes.
-        None of this was programmed by hand; it emerged from self-play.
-      </p>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Segmented value={street} onChange={setStreet} options={[{ value: '1', label: 'Flop' }, { value: '2', label: 'Turn' }, { value: '3', label: 'River' }]} />
-        <Segmented
-          value={spr}
-          onChange={setSpr}
-          options={[
-            { value: '4', label: 'Single-raised (SPR 12+)' },
-            { value: '3', label: 'SPR 6–12' },
-            { value: '2', label: '3-bet pot (SPR 3–6)' },
-          ]}
-        />
-        <Segmented value={agg} onChange={setAgg} options={[{ value: 'm', label: 'Had initiative' }, { value: 'o', label: 'Opponent had it' }, { value: 'n', label: 'Nobody' }]} />
+    <section className="glass" aria-label="Postflop strategy by hand strength">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-4 py-2.5">
+        <h2 className="font-mono text-[11px] font-normal tracking-[0.08em]">POSTFLOP · BY HAND STRENGTH</h2>
+        <div className="flex flex-wrap gap-2">
+          <Segmented value={street} onChange={setStreet} options={[{ value: '1', label: 'Flop' }, { value: '2', label: 'Turn' }, { value: '3', label: 'River' }]} />
+          <Segmented value={spr} onChange={setSpr} options={[{ value: '4', label: 'SRP' }, { value: '3', label: 'SPR 6–12' }, { value: '2', label: '3-bet' }]} />
+          <Segmented value={agg} onChange={setAgg} options={[{ value: 'm', label: 'My lead' }, { value: 'o', label: 'Their lead' }, { value: 'n', label: 'None' }]} />
+        </div>
       </div>
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {POST.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setSc(p)}
-            className={`min-h-[34px] border px-3 font-mono text-[11px] uppercase tracking-[0.06em] transition ${sc.id === p.id ? 'border-ink-100 bg-ink-100 font-bold text-ink-950' : 'border-ink-600 text-ink-400 hover:text-ink-100'}`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <div className="text-[11px] text-ink-400">Situation: {aggLabel(agg)} · previous street {agg === 'n' ? 'checked through' : 'had a bet'}</div>
-      <div className="relative mt-2">
-        <div className="flex h-[240px] items-end gap-[2px]" onPointerLeave={() => setHover(null)}>
+      <Tabs items={POST} value={sc} onChange={setSc} label="Postflop spot" />
+      <div className="relative p-4 sm:p-5">
+        <div className="mb-3 flex justify-between font-mono text-[11px] tracking-[0.06em]" aria-hidden="true">
+          <span className="flex items-center gap-2 text-gold">
+            <span className="balloon">1</span>BLUFF
+          </span>
+          <span className="flex items-center gap-2 text-ink-400">
+            <span className="balloon">2</span>CHECK
+          </span>
+          <span className="flex items-center gap-2 text-gold">
+            <span className="balloon">3</span>VALUE
+          </span>
+        </div>
+        <div className="flex h-[240px] items-end gap-[3px]" onPointerLeave={() => setHover(null)}>
           {cols.map((col, b) => (
-            <div key={b} onPointerEnter={() => setHover(b)} className={`relative flex h-full flex-1 flex-col-reverse overflow-hidden rounded-t-[4px] ${hover === b ? 'ring-2 ring-white/80' : ''}`} style={{ background: col ? undefined : 'rgba(255,255,255,0.03)' }}>
+            <div
+              key={b}
+              onPointerEnter={() => setHover(b)}
+              className="relative flex h-full flex-1 flex-col-reverse overflow-hidden"
+              style={{ background: col ? undefined : '#1c2024', boxShadow: hover === b ? '0 0 0 1.5px var(--color-gold)' : undefined }}
+            >
               {col?.map(({ c, p }) => <div key={c} style={{ height: `${p * 100}%`, background: CODE_COLORS[c] }} />)}
             </div>
           ))}
         </div>
-        <div className="mt-1 flex justify-between text-[10px] text-ink-500">
-          <span>← weakest hands</span>
-          <span>hand-strength bucket</span>
-          <span>strongest hands →</span>
+        <div className="ruler mt-1.5" aria-hidden="true" />
+        <div className="mt-1 flex justify-between font-mono text-[10px] tracking-[0.06em] text-ink-500">
+          <span>WEAK</span>
+          <span>STRONG</span>
         </div>
         {hover !== null && (
-          <div className="glass pointer-events-none absolute top-2 z-10 rounded-lg px-3 py-2 text-[11px]" style={{ left: `${Math.min(80, (hover / n) * 100)}%` }}>
-            <div className="font-semibold text-ink-100">
-              Bucket {hover + 1}/{n} · ~{pct((hover + 0.5) / n)} percentile
+          <div className="glass pointer-events-none absolute top-14 z-10 px-3 py-2 font-mono text-[11px]" style={{ left: `${Math.min(78, (hover / n) * 100)}%` }}>
+            <div className="mb-1 text-ink-400">
+              BUCKET {hover + 1}/{n}
             </div>
             {cols[hover] ? (
               cols[hover]!.map(({ c, p }) => (
                 <div key={c} className="flex justify-between gap-4">
-                  <span className="flex items-center gap-1.5 text-ink-300">
-                    <span className="h-2 w-2 rounded-sm" style={{ background: CODE_COLORS[c] }} />
+                  <span className="flex items-center gap-1.5 uppercase text-ink-300">
+                    <span className="h-2 w-2" style={{ background: CODE_COLORS[c] }} />
                     {CODE_LABELS[c]}
                   </span>
-                  <span className="tabular font-mono">{pct(p)}</span>
+                  <span className="tabular">{pct(p)}</span>
                 </div>
               ))
             ) : (
-              <div className="text-ink-400">Not reached in training</div>
+              <div className="text-ink-400">NOT REACHED</div>
             )}
           </div>
         )}
+        <div className="mt-4">
+          <Legend codes={codes} />
+        </div>
       </div>
-      <div className="mt-3">
-        <Legend codes={codes} />
-      </div>
-    </Panel>
+    </section>
   );
 }

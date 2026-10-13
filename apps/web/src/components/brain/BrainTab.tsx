@@ -6,6 +6,7 @@ import { type BotDecisionView, usePlay } from '../../lib/store';
 import { StrategyCompare } from '../charts/StrategyCompare';
 import { GROUP_COLORS } from '../table/ActionBar';
 import { BotAvatar } from '../table/Table';
+import { HandReview } from './HandReview';
 
 /** Words for the bot's hand-strength percentile, shown only after the hand. */
 function strengthWord(p: number) {
@@ -28,7 +29,11 @@ export function BrainTab() {
   // Revealing the bot's odds mid-hand would leak its cards; unlock once the hand is over.
   const revealed = phase === 'over' || phase === 'idle' || showBotCards || current.length === 0;
 
+  const handNo = usePlay((s) => s.handNo);
+  const review = phase === 'over' && last && last.id === handNo ? <HandReview h={last} /> : null;
+
   if (!d) {
+    if (review) return review;
     return (
       <div className="flex flex-col items-center gap-4 px-4 py-14 text-center">
         <BotAvatar thinking={phase === 'bot'} size={48} />
@@ -39,6 +44,8 @@ export function BrainTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      {review}
+      {review && <div className="mt-2 border-t border-ink-600 pt-3 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">ITS DECISIONS</div>}
       {decisions.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           {decisions.map((x) => (

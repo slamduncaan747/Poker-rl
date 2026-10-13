@@ -30,7 +30,7 @@ A Monte Carlo CFR equilibrium blueprint, a Bayesian opponent model, and a PPO-tr
 
 ## The demo
 
-- **Play** — an animated card-room table (3D card flips, chips, synthesized sound, keyboard shortcuts, phone layout). Choose a **Balanced** (pure GTO) or **Adaptive** opponent.
+- **Play** — a minimal drafting-table design (suit-coloured four-colour cards, numbered callouts for the bot's action, your price to call and your hand, keyboard shortcuts, phone layout). Choose a **Balanced** (pure GTO) or **Adaptive** opponent.
   - **AI's thinking** — after each bot move, a plain-English account of whether it is playing balanced or adapting to you and which of your habits it's reacting to. Its odds and hand strength unlock when the hand ends; the raw probabilities, tilt and infoset sit under *Technical details*.
   - **Your profile** — the archetype the AI reads you as, the habits it's confident about with advice, and a radar of your style vs balanced play.
   - **Coach** — every decision is rated against the solver ("Great play", "the solver prefers to fold"), with an accuracy score and an "Ask the solver" hint.
