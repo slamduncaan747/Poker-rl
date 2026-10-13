@@ -6,7 +6,7 @@ export function ArchitectureDiagram() {
     return (
       <g>
         <rect x={x} y={y} width={w} height={h} rx={14} fill={fill} stroke={stroke} strokeOpacity={0.7} strokeWidth={1.5} />
-        <text x={x + w / 2} y={y + 26} textAnchor="middle" fontSize="14" fontWeight="700" fill="#e6ebf2" fontFamily="Space Grotesk, Inter, sans-serif">
+        <text x={x + w / 2} y={y + 26} textAnchor="middle" fontSize="14" fontWeight="700" fill="#e6ebf2" fontFamily="Bricolage Grotesque, Manrope, sans-serif">
           {title}
         </text>
         {sub.map((s, i) => (

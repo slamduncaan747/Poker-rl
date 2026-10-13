@@ -5,3 +5,5 @@ dist/
 packages/training/checkpoints/
 coverage/
 .vite/
+artifact/
+dist-artifact/

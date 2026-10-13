@@ -7,6 +7,7 @@ import { MiniCard } from '../components/table/PlayingCard';
 import { Panel, Segmented } from '../components/ui/Controls';
 import { pct, signed } from '../lib/format';
 import type { ArenaIn, ArenaOpponent, ArenaOut, ArenaSample, ArenaTick } from '../workers/arena.worker';
+import ArenaWorker from '../workers/arena.worker.ts?worker&inline';
 
 const ICONS: Record<string, string> = {
   station: '📞',
@@ -46,7 +47,7 @@ export function ArenaPage() {
   const [samples, setSamples] = useState<ArenaSample[]>([]);
 
   useEffect(() => {
-    const w = new Worker(new URL('../workers/arena.worker.ts', import.meta.url), { type: 'module' });
+    const w = new ArenaWorker();
     worker.current = w;
     w.onmessage = (e: MessageEvent<ArenaOut>) => {
       const m = e.data;

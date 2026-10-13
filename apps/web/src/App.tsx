@@ -54,7 +54,7 @@ export function App() {
 
 function Header({ route }: { route: Route }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-white/5 bg-ink-950/70 backdrop-blur-xl">
+    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className="sticky z-30 border-b border-white/5 bg-ink-950/70 backdrop-blur-xl">
       <div className="mx-auto flex h-[60px] max-w-[1500px] items-center gap-4 px-4 lg:px-6">
         <a href="#play" className="flex items-center gap-2.5">
           <div className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-gto to-exploit text-lg font-black text-white shadow-lg">♠</div>
