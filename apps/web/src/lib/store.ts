@@ -119,13 +119,13 @@ function loadSettings(): Settings {
     riskBudget: false,
     showBotCards: false,
     coach: true,
-    fourColor: false,
+    fourColor: true,
     sound: true,
     speed: 'normal',
     autoDeal: false,
   };
   try {
-    const s = localStorage.getItem('pokerrl.settings.v2');
+    const s = localStorage.getItem('pokerrl.settings.v3');
     if (s) return { ...d, ...JSON.parse(s) };
   } catch {
     /* storage unavailable */
@@ -301,7 +301,7 @@ export const usePlay = create<PlayStore>((set, get) => {
     setSettings(p) {
       const settings = { ...get().settings, ...p };
       try {
-        localStorage.setItem('pokerrl.settings.v2', JSON.stringify(settings));
+        localStorage.setItem('pokerrl.settings.v3', JSON.stringify(settings));
       } catch {
         /* ignore */
       }

@@ -1,11 +1,11 @@
-import { type Card, type HUNLState } from '@poker-rl/engine';
+import { type Card, type HUNLState, describeHand, evaluate } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import { bb } from '../../lib/format';
+import { type ReactNode, useEffect, useState } from 'react';
+import { bb, pct } from '../../lib/format';
 import { bestFive } from '../../lib/hands';
-import { BOT, HUMAN, type ActionBubble, usePlay } from '../../lib/store';
+import { BOT, HUMAN, usePlay } from '../../lib/store';
 import { FitBox } from '../ui/FitBox';
-import { BetChips, ChipStack } from './Chips';
+import { BetChips } from './Chips';
 import { PlayingCard } from './PlayingCard';
 
 function useViewport() {
@@ -19,103 +19,98 @@ function useViewport() {
   return v;
 }
 
+/**
+ * The table drawn as a technical sketch: a chalk outline with a dashed
+ * construction line, player bars above and below, and numbered callouts in
+ * the margins (① the bot's last action, ② the price to call, ③ your hand).
+ */
 export function Table() {
   const state = usePlay((s) => s.state);
   usePlay((s) => s.version);
   const phase = usePlay((s) => s.phase);
-  const bubble = usePlay((s) => s.bubble);
   const showBotCards = usePlay((s) => s.settings.showBotCards);
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const handNo = usePlay((s) => s.handNo);
 
   const vp = useViewport();
   const narrow = vp.w < 720;
-  // On desktop, keep the whole play area (header, table, controls) inside one screen.
-  const maxHeight = vp.w >= 1024 ? Math.max(420, vp.h - 330) : undefined;
-  const W = narrow ? 600 : 960;
-  const H = narrow ? 560 : 610;
-  const inset = narrow ? 8 : 40;
+  // On desktop, keep the whole play area inside one screen.
+  const maxHeight = vp.w >= 1024 ? Math.max(420, vp.h - 250) : undefined;
+  const W = narrow ? 560 : 960;
+  const H = narrow ? 620 : 600;
+  const gutter = narrow ? 6 : 150;
   const over = phase === 'over' && state?.terminal;
   const showdown = !!(over && state?.isShowdown);
   const winners: Card[] = showdown && state ? winningCards(state) : [];
+  const cardSize = narrow ? 'md' : 'lg';
 
   return (
     <FitBox width={W} height={H} maxHeight={maxHeight}>
       <div className="relative" style={{ width: W, height: H }}>
-        {/* table */}
-        <div className={`table-rail absolute ${narrow ? 'rounded-[180px]' : 'rounded-[999px]'} p-[16px]`} style={{ left: inset, right: inset, top: 70, bottom: 70 }}>
-          <div className={`table-felt relative h-full w-full overflow-hidden ${narrow ? 'rounded-[170px]' : 'rounded-[999px]'}`}>
-            <div className="felt-noise pointer-events-none absolute inset-0" />
-            <div className="spotlight pointer-events-none absolute inset-0" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-[23%] text-center font-display text-[22px] italic tracking-[0.12em] text-[#d6b26e]/20">
-              Poker RL
+        {/* the drawn table */}
+        <div className="table-guide pointer-events-none absolute rounded-[999px]" style={{ left: gutter - 10, right: gutter - 10, top: 58, bottom: 58 }} />
+        <div className="table-outline absolute rounded-[999px]" style={{ left: gutter, right: gutter, top: 68, bottom: 68 }} />
+
+        {state && (
+          <>
+            {/* pot as a dimension line */}
+            <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 font-mono text-[12px]" style={{ top: narrow ? 214 : 196, width: narrow ? 300 : 360 }}>
+              <span aria-hidden="true" className="text-[8px]">◀</span>
+              <span className="h-px flex-1 bg-ink-100" />
+              <span className="tabular font-bold tracking-[0.08em]">POT {bb(state.pot)}</span>
+              <span className="h-px flex-1 bg-ink-100" />
+              <span aria-hidden="true" className="text-[8px]">▶</span>
             </div>
-            <div className="pointer-events-none absolute left-1/2 top-[18%] h-[64%] w-[78%] -translate-x-1/2 rounded-[999px] border border-[#d6b26e]/10" />
 
-            {state && (
-              <>
-                {/* pot */}
-                <div className="absolute left-1/2 top-[29%] flex -translate-x-1/2 flex-col items-center gap-1">
-                  <AnimatePresence>
-                    {potInMiddle(state) > 0 && (
-                      <motion.div key={`pot-${handNo}`} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-                        <ChipStack amount={potInMiddle(state)} size={24} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  <div className="tabular text-[11px] font-semibold uppercase tracking-[0.2em] text-[#efe9dc]/55">
-                    Pot {bb(state.pot)} bb
-                  </div>
-                </div>
+            {/* board */}
+            <div className="absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2" style={{ top: H / 2 + (narrow ? 0 : 6), gap: narrow ? 6 : 10 }}>
+              {Array.from({ length: 5 }).map((_, i) => {
+                const c = state.board[i];
+                return c !== undefined ? (
+                  <PlayingCard
+                    key={`${handNo}-b${i}`}
+                    card={c}
+                    size={cardSize}
+                    delay={i < 3 ? i * 0.08 : 0}
+                    highlight={winners.includes(c)}
+                    dim={showdown && winners.length > 0 && !winners.includes(c)}
+                  />
+                ) : (
+                  <div
+                    key={`slot${i}`}
+                    className="border border-dashed border-ink-500"
+                    style={narrow ? { width: 62, height: 88, borderRadius: 5 } : { width: 74, height: 104, borderRadius: 6 }}
+                  />
+                );
+              })}
+            </div>
 
-                {/* board */}
-                <div className="absolute left-1/2 top-[55%] flex -translate-x-1/2 -translate-y-1/2 gap-2.5">
-                  {Array.from({ length: 5 }).map((_, i) => {
-                    const c = state.board[i];
-                    return c !== undefined ? (
-                      <PlayingCard
-                        key={`${handNo}-b${i}`}
-                        card={c}
-                        size="lg"
-                        delay={i < 3 ? i * 0.09 : 0}
-                        highlight={winners.includes(c)}
-                        dim={showdown && winners.length > 0 && !winners.includes(c)}
-                      />
-                    ) : (
-                      <div key={`slot${i}`} className="h-[110px] w-[78px] rounded-[10px] border border-[#d6b26e]/10 bg-black/10" />
-                    );
-                  })}
-                </div>
+            {/* street bets */}
+            <div className="absolute" style={{ left: W / 2 + (narrow ? 70 : 80), top: narrow ? 120 : 112 }}>
+              <BetChips amount={state.terminal ? 0 : state.streetBet[BOT]} id={`bb-${handNo}-${state.street}`} color="var(--color-gold)" />
+            </div>
+            <div className="absolute" style={{ left: W / 2 + (narrow ? 70 : 80), bottom: narrow ? 120 : 112 }}>
+              <BetChips amount={state.terminal ? 0 : state.streetBet[HUMAN]} id={`hb-${handNo}-${state.street}`} />
+            </div>
+          </>
+        )}
 
-                {/* street bets */}
-                <div className="absolute left-[60%] top-[17%] -translate-x-1/2">
-                  <BetChips amount={state.terminal ? 0 : state.streetBet[BOT]} id={`bb-${handNo}-${state.street}`} />
-                </div>
-                <div className="absolute bottom-[17%] left-[60%] -translate-x-1/2">
-                  <BetChips amount={state.terminal ? 0 : state.streetBet[HUMAN]} id={`hb-${handNo}-${state.street}`} />
-                </div>
-              </>
-            )}
+        {!state && <IdleTable />}
 
-            {!state && <IdleFelt />}
-          </div>
-        </div>
+        {/* hole cards */}
+        <HoleCards seat={BOT} state={state} faceUp={showdown || (showBotCards && !!state)} winners={winners} top={narrow ? 92 : 86} size={narrow ? 'sm' : 'md'} />
+        <HoleCards seat={HUMAN} state={state} faceUp={!!state} winners={winners} bottom={narrow ? 92 : 86} size={cardSize === 'lg' ? 'md' : 'md'} />
 
-        {/* seats */}
-        <Seat seat={BOT} state={state} bubble={bubble} faceUp={showdown || (showBotCards && !!state)} winners={winners} thinking={phase === 'bot'} />
-        <Seat seat={HUMAN} state={state} bubble={bubble} faceUp={!!state} winners={winners} thinking={phase === 'human'} />
+        {/* player bars */}
+        <SeatBar seat={BOT} state={state} narrow={narrow} />
+        <SeatBar seat={HUMAN} state={state} narrow={narrow} />
 
-        {/* result banner */}
-        <AnimatePresence>
-          {over && last && last.id === handNo && <ResultBanner key={`res-${handNo}`} narrow={narrow} />}
-        </AnimatePresence>
+        {!narrow && state && <Callouts state={state} W={W} H={H} />}
+
+        <AnimatePresence>{over && last && last.id === handNo && <Result key={`res-${handNo}`} narrow={narrow} W={W} H={H} />}</AnimatePresence>
       </div>
     </FitBox>
   );
-}
-
-function potInMiddle(s: HUNLState) {
-  return s.terminal ? s.pot : s.pot - s.streetBet[0] - s.streetBet[1];
 }
 
 function winningCards(s: HUNLState): Card[] {
@@ -124,236 +119,199 @@ function winningCards(s: HUNLState): Card[] {
   return bestFive(s.holes(w), s.deal.board);
 }
 
-function IdleFelt() {
+function HoleCards({
+  seat,
+  state,
+  faceUp,
+  winners,
+  top,
+  bottom,
+  size,
+}: {
+  seat: number;
+  state: HUNLState | null;
+  faceUp: boolean;
+  winners: Card[];
+  top?: number;
+  bottom?: number;
+  size: 'sm' | 'md';
+}) {
+  const handNo = usePlay((s) => s.handNo);
+  const phase = usePlay((s) => s.phase);
+  const holes = state?.holes(seat);
+  if (!holes) return null;
+  const folded = state?.folded === seat;
+  const showdown = phase === 'over' && state?.isShowdown;
+  const isHuman = seat === HUMAN;
+  const myTurn = isHuman && phase === 'human';
+  return (
+    <div className="absolute left-1/2 flex -translate-x-1/2 gap-2" style={{ top, bottom }}>
+      {holes.map((c, i) => (
+        <PlayingCard
+          key={`${handNo}-${seat}-${i}`}
+          card={c}
+          faceUp={faceUp}
+          size={size}
+          from={{ x: 0, y: top !== undefined ? -60 : 60 }}
+          delay={i * 0.1 + (isHuman ? 0 : 0.05)}
+          highlight={(!!showdown && winners.includes(c)) || (myTurn && !showdown)}
+          dim={folded}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SeatBar({ seat, state, narrow }: { seat: number; state: HUNLState | null; narrow: boolean }) {
+  const isBot = seat === BOT;
+  const phase = usePlay((s) => s.phase);
+  const lambda = usePlay((s) => s.settings.lambda);
+  const stack = state ? state.stacks[seat] : 10_000;
+  const toAct = !!state && !state.terminal && state.toAct === seat;
+  const isButton = state?.button === seat;
+  const allIn = !!state && state.stacks[seat] === 0 && !state.terminal;
+  const thinking = isBot && phase === 'bot';
+  return (
+    <div
+      className={`absolute left-1/2 flex -translate-x-1/2 items-stretch border bg-ink-900 ${toAct ? 'border-ink-100' : 'border-ink-600'}`}
+      style={{ width: narrow ? 360 : 340, height: 46, ...(isBot ? { top: 4 } : { bottom: 4 }) }}
+    >
+      <span className={`grid w-11 place-items-center border-r font-mono text-[11px] font-bold ${toAct ? 'border-ink-100' : 'border-ink-600'}`} aria-hidden="true">
+        {isBot ? 'RL' : 'YOU'}
+      </span>
+      <span className="flex min-w-0 flex-1 items-center gap-2 px-3">
+        <strong className="truncate font-bold">{isBot ? 'Poker RL' : 'You'}</strong>
+        {isButton && <span className="font-mono text-[10px] tracking-[0.08em] text-ink-400" title="Dealer button">D</span>}
+        {isBot && <span className="font-mono text-[10px] tracking-[0.08em] text-ink-400">{lambda > 0 ? 'ADAPTIVE' : 'BALANCED'}</span>}
+        {thinking && <span className="thinking-shimmer ml-auto h-[2px] w-10" aria-label="Thinking" />}
+      </span>
+      <span
+        className={`tabular flex min-w-[88px] items-center justify-end px-3 font-mono text-[19px] font-bold ${
+          toAct && !isBot ? 'bg-ink-100 text-ink-950' : 'border-l border-ink-600 text-ink-300'
+        }`}
+      >
+        {allIn ? 'ALL-IN' : bb(stack, stack % 100 === 0 ? 0 : 1)}
+      </span>
+    </div>
+  );
+}
+
+function Callout({ n, children, accent, style, line }: { n: number; children: ReactNode; accent?: boolean; style: React.CSSProperties; line: React.CSSProperties }) {
+  const color = accent ? 'var(--color-gold)' : 'var(--color-ink-100)';
+  return (
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute flex items-center gap-2 font-mono text-[11.5px] tracking-[0.06em] whitespace-nowrap" style={{ color, ...style }}>
+        <span className="balloon">{n}</span>
+        {children}
+      </motion.div>
+      <motion.div aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute h-px" style={{ background: accent ? 'var(--color-gold)' : 'var(--color-ink-400)', ...line }} />
+    </>
+  );
+}
+
+function Callouts({ state, W, H }: { state: HUNLState; W: number; H: number }) {
+  const phase = usePlay((s) => s.phase);
+  const bubble = usePlay((s) => s.bubble);
+  const live = phase !== 'over' && !state.terminal;
+  const toCall = live && state.toAct === HUMAN ? state.toCall(HUMAN) : 0;
+  const need = toCall > 0 ? toCall / (state.pot + toCall) : 0;
+  const [a, b] = state.holes(HUMAN);
+  const hand =
+    state.board.length >= 3
+      ? describeHand(evaluate([a, b, ...state.board]))
+      : a >> 2 === b >> 2
+        ? 'Pocket pair'
+        : (a & 3) === (b & 3)
+          ? 'Suited'
+          : 'Offsuit';
+  return (
+    <AnimatePresence>
+      {live && bubble && bubble.seat === BOT && (
+        <Callout key={`c1-${bubble.id}`} n={1} accent style={{ left: 0, top: 104 }} line={{ left: 30 + bubble.text.length * 8, width: Math.max(40, W / 2 - 110 - (30 + bubble.text.length * 8)), top: 114 }}>
+          {bubble.text.toUpperCase()}
+        </Callout>
+      )}
+      {toCall > 0 && (
+        <Callout key="c2" n={2} style={{ right: 0, top: H / 2 - 4 }} line={{ right: 112, width: 70, top: H / 2 + 6 }}>
+          NEED {pct(need)}
+        </Callout>
+      )}
+      <Callout key="c3" n={3} style={{ left: 0, bottom: 104 }} line={{ left: 36 + hand.length * 8, width: Math.max(40, W / 2 - 80 - (36 + hand.length * 8)), bottom: 114 }}>
+        {hand.toUpperCase()}
+      </Callout>
+    </AnimatePresence>
+  );
+}
+
+function IdleTable() {
   const newHand = usePlay((s) => s.newHand);
   const phase = usePlay((s) => s.phase);
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-      <div className="flex -space-x-6">
-        {[51, 47, 43].map((c, i) => (
-          <motion.div key={c} initial={{ rotate: 0, y: 20, opacity: 0 }} animate={{ rotate: (i - 1) * 12, y: 0, opacity: 1 }} transition={{ delay: 0.2 + i * 0.1, type: 'spring' }}>
-            <PlayingCard card={c} size="lg" />
-          </motion.div>
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+      <div className="flex gap-2.5">
+        {[51, 46, 41, 36, 31].map((c, i) => (
+          <PlayingCard key={c} card={c} size="lg" delay={0.15 + i * 0.07} />
         ))}
       </div>
-      <button
-        onClick={newHand}
-        disabled={phase === 'loading'}
-        className="btn btn-gold px-8 py-3 text-base"
-      >
-        Deal the first hand
+      <button onClick={newHand} disabled={phase === 'loading'} className="btn btn-gold min-h-[52px] px-10 text-base">
+        Deal
       </button>
     </div>
   );
 }
 
-interface SeatProps {
-  seat: number;
-  state: HUNLState | null;
-  bubble: ActionBubble | null;
-  faceUp: boolean;
-  winners: Card[];
-  thinking: boolean;
-}
-
-function Seat({ seat, state, bubble, faceUp, winners, thinking }: SeatProps) {
-  const isBot = seat === BOT;
-  const handNo = usePlay((s) => s.handNo);
-  const phase = usePlay((s) => s.phase);
-  const top = isBot;
-  const holes = state?.holes(seat);
-  const folded = state?.folded === seat;
-  const isButton = state?.button === seat;
-  const toAct = state && !state.terminal && state.toAct === seat;
-  const stack = state ? state.stacks[seat] : 10_000;
-  const allIn = state && state.stacks[seat] === 0 && !state.terminal;
-  const showdown = phase === 'over' && state?.isShowdown;
-
-  return (
-    <div className={`absolute left-1/2 flex -translate-x-1/2 flex-col items-center ${top ? 'top-0' : 'bottom-0'}`}>
-      {/* cards */}
-      <div className={`relative z-0 flex gap-1.5 ${top ? 'order-2 -mt-3' : 'order-1 -mb-3'}`}>
-        {holes &&
-          holes.map((c, i) => (
-            <motion.div key={`${handNo}-${seat}-${i}`} animate={{ rotate: (i === 0 ? -5 : 5) * (top ? -1 : 1), y: folded ? (top ? -12 : 12) : 0 }}>
-              <PlayingCard
-                card={c}
-                faceUp={faceUp}
-                size="md"
-                from={{ x: 0, y: top ? 120 : -120 }}
-                delay={i * 0.12 + (isBot ? 0.06 : 0)}
-                highlight={!!showdown && winners.includes(c)}
-                dim={folded}
-              />
-            </motion.div>
-          ))}
-      </div>
-
-      {/* plate */}
-      <div className={`relative z-10 ${top ? 'order-1' : 'order-2'}`}>
-        <div
-          className={`glass relative flex w-[210px] items-center gap-3 rounded-2xl px-3 py-2.5 ${toAct ? 'turn-glow' : ''}`}
-          style={{ borderColor: toAct ? 'rgba(251,191,36,0.6)' : undefined }}
-        >
-          {isBot ? <BotAvatar thinking={thinking && !!toAct} /> : <HumanAvatar />}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 font-display text-[17px] font-semibold leading-none">
-              {isBot ? 'Poker RL' : 'You'}
-              {isButton && (
-                <span title="Dealer button" className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-b from-[#fffdf8] to-[#d9d0bd] font-sans text-[10px] font-black text-[#241a08] shadow">
-                  D
-                </span>
-              )}
-              {state && !isButton && <span className="rounded bg-white/10 px-1 font-sans text-[9px] font-bold text-ink-300">BB</span>}
-            </div>
-            <div className="tabular text-[13px] font-semibold text-gold-hi">
-              {allIn ? <span className="font-bold text-loss">All-in</span> : `${bb(stack)} bb`}
-            </div>
-            {isBot && <BotSubtitle />}
-          </div>
-        </div>
-        {/* action bubble */}
-        <AnimatePresence>
-          {bubble && bubble.seat === seat && phase !== 'over' && (
-            <motion.div
-              key={bubble.id}
-              initial={{ opacity: 0, x: 8, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className={`absolute right-full top-1/2 z-20 mr-3 -translate-y-1/2 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold shadow-lg ${bubbleColor(
-                bubble.kind,
-              )}`}
-            >
-              {bubble.text}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
-
-function bubbleColor(kind: string) {
-  switch (kind) {
-    case 'fold':
-      return 'bg-ink-700 text-ink-200 ring-1 ring-white/10';
-    case 'check':
-    case 'call':
-      return 'bg-[#123d2e] text-[#bfeedd] ring-1 ring-[#5fd3a0]/30';
-    default:
-      return 'bg-[#3a2a12] text-gold-hi ring-1 ring-gold/40';
-  }
-}
-
-function BotSubtitle() {
-  const lambda = usePlay((s) => s.settings.lambda);
-  const hands = usePlay((s) => s.bot?.model.hands ?? 0);
-  usePlay((s) => s.version);
-  return (
-    <div className="mt-0.5 truncate text-[10.5px] text-ink-400">
-      {lambda === 0 ? 'Balanced mode' : hands < 10 ? 'Adaptive · learning you' : `Adaptive · ${hands} hands read`}
-    </div>
-  );
-}
-
-export function BotAvatar({ thinking, size = 44 }: { thinking: boolean; size?: number }) {
-  return (
-    <div className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{ background: 'conic-gradient(from 0deg, #f0d9a4, #8a6a30, #d6b26e, #3d2e14, #f0d9a4)' }}
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: thinking ? 1.2 : 8, ease: 'linear' }}
-      />
-      <div className="absolute inset-[2px] rounded-full bg-ink-900" />
-      <motion.div
-        className="relative h-[46%] w-[46%] rounded-full"
-        style={{ background: 'radial-gradient(circle at 35% 30%, #fff1cf, #d6b26e 45%, #3d2e14)' }}
-        animate={thinking ? { scale: [1, 1.18, 1] } : { scale: 1 }}
-        transition={{ repeat: Infinity, duration: 0.9 }}
-      />
-    </div>
-  );
-}
-
-function HumanAvatar() {
-  return (
-    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#f0d9a4] to-[#9c7a3e] font-display text-xl font-bold text-[#241a08] ring-2 ring-[#d6b26e]/30">
-      Y
-    </div>
-  );
-}
-
-function ResultBanner({ narrow }: { narrow: boolean }) {
+function Result({ narrow, W, H }: { narrow: boolean; W: number; H: number }) {
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const newHand = usePlay((s) => s.newHand);
   const autoDeal = usePlay((s) => s.settings.autoDeal);
   const [show, setShow] = useState(!last?.showdown);
   useEffect(() => {
     if (!last?.showdown) return;
-    const t = setTimeout(() => setShow(true), 900);
+    const t = setTimeout(() => setShow(true), 800);
     return () => clearTimeout(t);
   }, [last]);
   if (!last || !show) return null;
   const won = last.net > 0;
   const split = last.winner === 'split';
   const amt = Math.abs(last.net) / 100;
-  const title = split ? 'Split pot' : won ? `You win ${amt.toFixed(1)} bb` : `Poker RL wins ${amt.toFixed(1)} bb`;
   const sub = last.showdown
     ? split
-      ? last.humanHand
+      ? (last.humanHand ?? '')
       : won
-        ? `${last.humanHand} beats ${last.botHand}`
-        : `${last.botHand} beats ${last.humanHand}`
+        ? `${last.humanHand} > ${last.botHand}`
+        : `${last.botHand} > ${last.humanHand}`
     : won
-      ? 'Poker RL folds'
+      ? 'It folded'
       : 'You folded';
+  const pos: React.CSSProperties = narrow ? { left: '50%', top: 150, transform: 'translateX(-50%)' } : { left: 0, top: H / 2 - 70, width: 150 };
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.85, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-      className={narrow ? 'absolute left-1/2 top-[17%] z-30 -translate-x-1/2' : 'absolute left-[58px] top-1/2 z-30 w-[188px] -translate-y-1/2'}
-    >
-      {won && <Burst />}
-      <div
-        className={`glass relative flex ${narrow ? 'items-center gap-4' : 'flex-col items-start gap-3'} rounded-2xl px-5 py-3.5 ${
-          won ? 'ring-1 ring-win/40' : split ? '' : 'ring-1 ring-loss/30'
-        }`}
-      >
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute z-30" style={pos}>
+      <div className={`flex border bg-ink-900 ${narrow ? 'items-center gap-4 px-4 py-2.5' : 'flex-col items-start gap-2 px-3.5 py-3'} ${won ? 'border-gold' : 'border-ink-500'}`}>
         <div>
-          <div className={`font-display text-[24px] font-semibold leading-tight ${won ? 'text-win' : split ? 'text-ink-100' : 'text-loss'}`}>{title}</div>
-          <div className="text-xs text-ink-300">{sub}</div>
+          <div className={`tabular font-mono text-[28px] font-bold leading-none ${won ? 'text-gold' : split ? 'text-ink-100' : 'text-ink-300'}`}>
+            {split ? '±0' : `${won ? '+' : '−'}${amt % 1 === 0 ? amt.toFixed(0) : amt.toFixed(1)}`}
+          </div>
+          <div className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400" style={{ maxWidth: narrow ? 200 : 130 }}>
+            {sub}
+          </div>
         </div>
         {!autoDeal && (
-          <button onClick={newHand} className="btn whitespace-nowrap bg-white/10 px-4 py-2 text-sm hover:bg-white/20">
-            Next hand
+          <button onClick={newHand} className="btn min-h-[40px] border border-ink-100 px-4 text-sm hover:bg-ink-800">
+            Next
           </button>
         )}
       </div>
+      {!narrow && <div aria-hidden="true" className="absolute h-px bg-ink-500" style={{ left: 150, top: 70, width: W / 2 - 150 - 200 }} />}
     </motion.div>
   );
 }
 
-function Burst() {
-  const parts = Array.from({ length: 22 });
+/** Small bot mark used in the AI panel: a square with a pulse while it thinks. */
+export function BotAvatar({ thinking, size = 44 }: { thinking: boolean; size?: number }) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-1/2">
-      {parts.map((_, i) => {
-        const a = (i / parts.length) * Math.PI * 2;
-        const r = 90 + (i % 3) * 40;
-        return (
-          <motion.span
-            key={i}
-            className="absolute h-2 w-2 rounded-full"
-            style={{ background: ['#f0d9a4', '#d6b26e', '#5fd3a0', '#efe9dc'][i % 4] }}
-            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-            animate={{ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.6, opacity: 0, scale: 0.3 }}
-            transition={{ duration: 1.1, ease: 'easeOut' }}
-          />
-        );
-      })}
+    <div className="relative grid shrink-0 place-items-center border border-ink-500 font-mono text-[11px] font-bold" style={{ width: size, height: size }} aria-hidden="true">
+      RL
+      {thinking && <span className="thinking-shimmer absolute inset-x-0 bottom-0 h-[2px]" />}
     </div>
   );
 }
