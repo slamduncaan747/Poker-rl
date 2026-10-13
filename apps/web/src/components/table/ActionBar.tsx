@@ -101,7 +101,6 @@ export function ActionBar() {
 
   return (
     <div className="relative flex flex-col gap-3">
-      <GradeLine />
       <AnimatePresence mode="wait">
         {myTurn ? (
           <motion.div key="act" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2.5">
@@ -114,6 +113,7 @@ export function ActionBar() {
                   <span className="tabular text-ink-100">
                     {bb(to)} <span className="text-ink-400">· {pct(potFrac)} POT</span>
                   </span>
+                  <HintButton />
                 </div>
                 <input
                   id="raise-to"
@@ -141,23 +141,23 @@ export function ActionBar() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
-              <button onClick={doFold} disabled={toCall === 0} title="Fold (F)" className="btn min-h-[48px] border border-ink-100 text-[15px] hover:bg-ink-800">
+            <div className="grid grid-cols-3 gap-2">
+              <button onClick={doFold} disabled={toCall === 0} title="Fold (F)" className="btn min-h-[50px] border border-ink-100 text-[15px] hover:bg-ink-800 sm:text-[16px]">
                 Fold <span className="kbd">F</span>
               </button>
-              <button onClick={doCall} title="Check / call (C)" className="btn min-h-[48px] border border-ink-100 text-[15px] hover:bg-ink-800">
+              <button onClick={doCall} title="Check / call (C)" className="btn min-h-[50px] border border-ink-100 text-[15px] hover:bg-ink-800 sm:text-[16px]">
                 {toCallLabel} <span className="kbd">C</span>
               </button>
-              <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold min-h-[48px] text-[15px] lg:col-span-2 lg:min-h-[54px] lg:text-[17px]">
+              <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold min-h-[50px] text-[15px] sm:text-[16px]">
                 {raiseLabel} <span className="kbd">R</span>
               </button>
             </div>
           </motion.div>
         ) : (
-          <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2.5">
-            <WaitingText />
+          <motion.div key={`wait-${phase}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-[86px] items-center gap-4">
+            {phase === 'over' ? <ResultLine /> : <WaitingText />}
             {(phase === 'idle' || phase === 'over') && (
-              <button onClick={newHand} className="btn btn-gold min-h-[54px] text-[17px]">
+              <button onClick={newHand} className="btn btn-gold ml-auto min-h-[52px] shrink-0 whitespace-nowrap px-5 text-[16px] sm:px-8">
                 {phase === 'idle' ? 'Deal' : 'Next hand'} <span className="kbd">SPACE</span>
               </button>
             )}
@@ -170,7 +170,7 @@ export function ActionBar() {
 
 function WaitingText() {
   const phase = usePlay((s) => s.phase);
-  const label = phase === 'bot' ? 'POKER RL IS THINKING' : phase === 'over' ? 'HAND OVER' : phase === 'loading' ? 'LOADING' : phase === 'idle' ? 'READY' : '';
+  const label = phase === 'bot' ? 'NASH IS THINKING' : phase === 'over' ? 'HAND OVER' : phase === 'loading' ? 'LOADING' : phase === 'idle' ? 'READY' : '';
   if (!label) return <div className="h-[18px]" />;
   return (
     <div className="flex min-h-[18px] items-center gap-3 font-mono text-[11px] tracking-[0.08em] text-ink-400">
@@ -184,29 +184,53 @@ function WaitingText() {
   );
 }
 
-const GRADE: Record<string, { mark: string; text: string; strong: boolean }> = {
-  Best: { mark: '★', text: 'BEST', strong: true },
-  Good: { mark: '✓', text: 'GOOD', strong: false },
-  Inaccuracy: { mark: '?!', text: 'SLIGHTLY OFF', strong: false },
-  Mistake: { mark: '?', text: 'MISTAKE', strong: false },
-  Blunder: { mark: '??', text: 'BIG MISTAKE', strong: false },
-};
-
 const VERB: Record<string, string> = { f: 'fold', k: 'check', c: 'call', t: 'bet ⅓', h: 'bet ½', p: 'bet pot', a: 'all-in' };
 
-/** The coach's verdict on your last decision, in one line. */
-function GradeLine() {
-  const grades = usePlay((s) => s.humanGrades);
+/** The solver's suggestion for this spot, on request. */
+function HintButton() {
+  const hint = usePlay((s) => s.hint);
+  const requestHint = usePlay((s) => s.requestHint);
   const coach = usePlay((s) => s.settings.coach);
-  const g = grades[grades.length - 1];
-  if (!coach || !g) return null;
-  const v = GRADE[g.label];
-  const good = g.label === 'Best' || g.label === 'Good';
+  if (!coach) return null;
+  if (!hint)
+    return (
+      <button onClick={requestHint} className="ml-3 border border-dashed border-ink-500 px-2 py-0.5 text-ink-300 hover:border-ink-100 hover:text-ink-100">
+        HINT <span className="kbd">H</span>
+      </button>
+    );
+  const top = hint.codes
+    .map((c, i) => ({ c, p: hint.probs[i] }))
+    .filter((x) => x.p >= 0.12)
+    .sort((x, y) => y.p - x.p)
+    .slice(0, 2);
   return (
-    <motion.div key={grades.length} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 font-mono text-[11px] tracking-[0.06em]">
-      <span className={`grid h-5 min-w-5 place-items-center px-1 text-[10px] font-bold ${v.strong ? 'bg-ink-100 text-ink-950' : good ? 'border border-ink-100' : 'border border-dashed border-gold text-gold'}`}>{v.mark}</span>
-      <span className={good ? 'text-ink-100' : 'text-gold'}>{v.text}</span>
-      {!good && <span className="uppercase text-ink-400">· solver: {VERB[g.bestCode] ?? g.bestCode}</span>}
-    </motion.div>
+    <span className="ml-3 uppercase text-gold">
+      {top.map((x) => `${VERB[x.c]} ${pct(x.p)}`).join(' · ')}
+    </span>
+  );
+}
+
+/** How the hand ended, in one line. */
+function ResultLine() {
+  const last = usePlay((s) => s.history[s.history.length - 1]);
+  if (!last) return null;
+  const won = last.net > 0;
+  const amt = Math.abs(last.net) / 100;
+  const sub = last.showdown
+    ? last.winner === 'split'
+      ? (last.humanHand ?? '')
+      : won
+        ? `${last.humanHand} beats ${last.botHand}`
+        : `${last.botHand} beats ${last.humanHand}`
+    : won
+      ? 'Nash folded'
+      : 'You folded';
+  return (
+    <div className="flex items-baseline gap-3">
+      <span className={`tabular font-mono text-[30px] font-bold leading-none ${won ? 'text-gold' : 'text-ink-100'}`}>
+        {last.winner === 'split' ? '±0' : `${won ? '+' : '−'}${amt % 1 === 0 ? amt.toFixed(0) : amt.toFixed(1)}`}
+      </span>
+      <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-400">{sub}</span>
+    </div>
   );
 }

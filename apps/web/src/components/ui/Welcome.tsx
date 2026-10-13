@@ -41,7 +41,7 @@ export function Welcome() {
           >
             <div className="eyebrow">Heads-up no-limit · 100 bb</div>
             <h2 className="mt-3 text-[30px] font-extrabold leading-[1.08] sm:text-[38px]">
-              Beat an AI that <span className="text-gold">learns your leaks.</span>
+              Beat Nash. <span className="text-gold">It learns your leaks.</span>
             </h2>
             <div className="mt-6 grid border border-ink-600 sm:grid-cols-3">
               {STEPS.map((s, i) => (

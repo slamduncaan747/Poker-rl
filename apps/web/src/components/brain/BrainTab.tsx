@@ -70,7 +70,7 @@ export function BrainTab() {
   );
 }
 
-function DecisionView({ d, revealed, fromLastHand }: { d: BotDecisionView; revealed: boolean; fromLastHand: boolean }) {
+export function DecisionView({ d, revealed, fromLastHand, compact }: { d: BotDecisionView; revealed: boolean; fromLastHand: boolean; compact?: boolean }) {
   const { info, explanation: ex } = d;
   const [details, setDetails] = useState(false);
   const adapting = ex.tone === 'exploit';
@@ -121,7 +121,7 @@ function DecisionView({ d, revealed, fromLastHand }: { d: BotDecisionView; revea
         </div>
       )}
 
-      {revealed && (
+      {revealed && !compact && (
         <div>
           <button onClick={() => setDetails((v) => !v)} className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-400 hover:text-ink-200">
             <span className={`inline-block transition ${details ? 'rotate-90' : ''}`}>›</span> <span className="font-mono text-[10.5px] tracking-[0.08em]">DETAILS</span>
