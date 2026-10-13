@@ -16,10 +16,10 @@ export function EvalChart({ rows }: { rows: EvalRow[] }) {
     <div>
       <div className="mb-3 flex gap-4 text-[11px] text-ink-300">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-3 rounded-sm bg-gto" /> GTO blueprint
+          <span className="h-2 w-3 rounded-sm bg-gto" /> Balanced AI (GTO)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-3 rounded-sm bg-exploit" /> Exploit AI (GTO + RL)
+          <span className="h-2 w-3 rounded-sm bg-exploit" /> Adaptive AI (GTO + RL)
         </span>
         <span className="text-ink-500">whiskers = 95% CI</span>
       </div>

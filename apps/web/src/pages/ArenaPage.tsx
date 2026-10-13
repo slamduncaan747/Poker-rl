@@ -10,16 +10,24 @@ import type { ArenaIn, ArenaOpponent, ArenaOut, ArenaSample, ArenaTick } from '.
 import ArenaWorker from '../workers/arena.worker.ts?worker&inline';
 
 const ICONS: Record<string, string> = {
-  station: '📞',
-  maniac: '🔥',
-  nit: '🪨',
-  tag: '🎯',
-  lag: '⚡',
-  scared: '😰',
-  fish: '🐟',
-  gto: '⚖️',
-  custom: '🛠️',
+  station: 'CS',
+  maniac: 'Ma',
+  nit: 'Ni',
+  tag: 'TA',
+  lag: 'LA',
+  scared: 'SM',
+  fish: 'PF',
+  gto: 'GT',
+  custom: '+',
 };
+
+function Monogram({ id, active }: { id: string; active?: boolean }) {
+  return (
+    <span className={`grid h-9 w-9 place-items-center rounded-full font-display text-[15px] font-semibold ring-1 ${active ? 'text-gold-hi ring-gold/60' : 'text-ink-300 ring-white/15'}`}>
+      {ICONS[id]}
+    </span>
+  );
+}
 
 const OPPONENTS = [...Object.keys(ARCHETYPES), 'gto', 'custom'];
 
@@ -83,12 +91,12 @@ export function ArenaPage() {
 
   const series = useMemo(
     () => [
-      { name: 'Exploit AI (GTO + RL)', color: 'var(--color-exploit)', points: ticks.map((t) => [t.hand, t.exploit] as [number, number]) },
-      { name: 'GTO blueprint only', color: 'var(--color-gto)', points: ticks.map((t) => [t.hand, t.gto] as [number, number]) },
+      { name: 'Adaptive AI', color: 'var(--color-exploit)', points: ticks.map((t) => [t.hand, t.exploit] as [number, number]) },
+      { name: 'Balanced AI', color: 'var(--color-gto)', points: ticks.map((t) => [t.hand, t.gto] as [number, number]) },
     ],
     [ticks],
   );
-  const tiltSeries = useMemo(() => [{ name: 'Deviation from GTO', color: 'var(--color-exploit)', points: ticks.slice(1).map((t) => [t.hand, t.tilt * 100] as [number, number]) }], [ticks]);
+  const tiltSeries = useMemo(() => [{ name: 'Changed play', color: 'var(--color-exploit)', points: ticks.slice(1).map((t) => [t.hand, t.tilt * 100] as [number, number]) }], [ticks]);
 
   const oppName = opp === 'gto' ? 'GTO Blueprint' : opp === 'custom' ? 'Custom opponent' : ARCHETYPES[opp].name;
   const significant = prog && Math.abs(prog.diffMean) > 1.96 * prog.diffSE;
@@ -96,12 +104,12 @@ export function ArenaPage() {
   return (
     <div className="mx-auto max-w-[1500px] px-4 pb-12 lg:px-6">
       <div className="mb-6 mt-2 max-w-3xl">
-        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
           The <span className="text-gradient">Arena</span>
         </h1>
         <p className="mt-2 text-ink-300">
-          Pit the bot against a player archetype for thousands of hands. Both the <span className="text-exploit-hi">Exploit AI</span> and the pure{' '}
-          <span className="text-gto-hi">GTO blueprint</span> play the <em>same deals</em> from the <em>same seats</em> (duplicate format), so the gap between the curves is the value the RL layer adds — not luck.
+          Pick a type of player and watch thousands of hands in seconds. The <span className="text-exploit-hi">Adaptive AI</span> and the{' '}
+          <span className="text-gto-hi">Balanced AI</span> play exactly the same cards from the same seats, so the gap between their results comes from adapting, not from luck.
         </p>
       </div>
 
@@ -117,10 +125,10 @@ export function ArenaPage() {
                     onClick={() => setOpp(id)}
                     disabled={running}
                     className={`flex flex-col items-center gap-1 rounded-xl px-1 py-2.5 text-center text-[11px] ring-1 transition ${
-                      opp === id ? 'bg-exploit/15 text-ink-100 ring-exploit/50' : 'bg-white/[0.03] text-ink-300 ring-white/5 hover:bg-white/[0.06]'
+                      opp === id ? 'bg-gold/10 text-ink-100 ring-gold/40' : 'bg-white/[0.02] text-ink-300 ring-white/5 hover:bg-white/[0.05]'
                     } disabled:opacity-50`}
                   >
-                    <span className="text-xl">{ICONS[id]}</span>
+                    <Monogram id={id} active={opp === id} />
                     <span className="leading-tight">{name}</span>
                   </button>
                 );
@@ -193,22 +201,22 @@ export function ArenaPage() {
                 <button
                   onClick={start}
                   disabled={!ready}
-                  className="btn mt-1 bg-gradient-to-r from-gto to-exploit py-3 text-sm text-white shadow-[0_10px_30px_-10px_rgba(232,95,42,0.7)] hover:brightness-110"
+                  className="btn btn-gold mt-1 py-3 text-sm"
                 >
                   {ready ? `Start ${hands.toLocaleString()} deals vs ${oppName}` : 'Loading models…'}
                 </button>
               )}
-              <p className="text-[11px] text-ink-500">Each deal is played 4×: both bots, both seats. Simulation runs in a Web Worker.</p>
+              <p className="text-[11px] text-ink-500">Each deal is played four times: both AIs, from both seats.</p>
             </div>
           </Panel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <BigStat label="Exploit AI" color="text-exploit-hi" mean={prog?.exploitMean} se={prog?.exploitSE} />
-            <BigStat label="GTO blueprint" color="text-gto-hi" mean={prog?.gtoMean} se={prog?.gtoSE} />
+            <BigStat label="Adaptive AI" color="text-exploit-hi" mean={prog?.exploitMean} se={prog?.exploitSE} />
+            <BigStat label="Balanced AI" color="text-gto-hi" mean={prog?.gtoMean} se={prog?.gtoSE} />
             <div className="glass rounded-2xl p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-400">RL edge (exploit − GTO)</div>
+              <div className="eyebrow">Gain from adapting</div>
               <div className={`tabular mt-1 font-display text-3xl font-bold ${prog && prog.diffMean > 0 ? 'text-win' : prog ? 'text-loss' : 'text-ink-500'}`}>
                 {prog ? signed(prog.diffMean * 100, 1) : '—'}
                 <span className="ml-1 text-sm font-medium text-ink-400">bb/100</span>
@@ -216,16 +224,31 @@ export function ArenaPage() {
               <div className="mt-1 flex items-center gap-2 text-[11px] text-ink-400">
                 {prog ? `±${(1.96 * prog.diffSE * 100).toFixed(1)} (95% CI)` : 'paired difference'}
                 {prog && (
-                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${significant ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-ink-400'}`}>
-                    {significant ? 'significant' : 'not yet significant'}
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${significant ? 'bg-win/15 text-win' : 'bg-white/5 text-ink-400'}`}>
+                    {significant ? 'clear result' : 'needs more hands'}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
+          {prog && (
+            <div className="px-1 font-display text-[22px] leading-snug text-ink-100">
+              {prog.finished ? 'Result: ' : 'So far: '}
+              {prog.diffMean >= 0 ? (
+                <>
+                  adapting earned <span className="text-win">{(prog.diffMean * 100).toFixed(0)} big blinds more</span> per 100 hands than balanced play against a {oppName}.
+                </>
+              ) : (
+                <>
+                  balanced play is ahead by <span className="text-gto-hi">{(-prog.diffMean * 100).toFixed(0)} big blinds</span> per 100 hands against a {oppName}
+                  {significant ? '.' : ', within the noise.'}
+                </>
+              )}
+            </div>
+          )}
           <Panel
-            title={`Cumulative winnings vs ${oppName}`}
+            title={`Winnings over time vs ${oppName}`}
             right={
               prog && (
                 <span className="tabular font-mono text-xs text-ink-400">
@@ -236,22 +259,20 @@ export function ArenaPage() {
           >
             {prog && (
               <div className="mb-3 h-1 overflow-hidden rounded-full bg-white/5">
-                <motion.div className="h-full bg-gradient-to-r from-gto to-exploit" animate={{ width: `${(prog.done / prog.total) * 100}%` }} />
+                <motion.div className="h-full bg-gold" animate={{ width: `${(prog.done / prog.total) * 100}%` }} />
               </div>
             )}
             <LineChart series={series} height={260} xLabel="deals played" yLabel="big blinds" formatY={(v) => v.toFixed(0)} empty="Pick an opponent and press Start" />
           </Panel>
 
           <div className="grid gap-5 xl:grid-cols-2">
-            <Panel title="The bot's read on the opponent">
+            <Panel title="What the Adaptive AI learned">
               {prog ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
                     {prog.read.map((r, i) => (
                       <div key={r.id} className="grid grid-cols-[120px_1fr_44px] items-center gap-2 text-[12px]">
-                        <span className={i === 0 ? 'font-semibold text-ink-100' : 'text-ink-400'}>
-                          {ICONS[r.id]} {r.name}
-                        </span>
+                        <span className={i === 0 ? 'font-semibold text-ink-100' : 'text-ink-400'}>{r.name}</span>
                         <div className="h-2 overflow-hidden rounded-full bg-white/5">
                           <motion.div className="h-full rounded-full" style={{ background: i === 0 ? 'var(--color-exploit)' : 'var(--color-ink-500)' }} animate={{ width: `${r.prob * 100}%` }} />
                         </div>
@@ -260,7 +281,7 @@ export function ArenaPage() {
                     ))}
                   </div>
                   <div>
-                    <div className="mb-1.5 text-[10px] uppercase tracking-widest text-ink-400">Biggest leaks detected</div>
+                    <div className="eyebrow mb-1.5">Biggest leaks found</div>
                     {prog.stats
                       .filter((s) => s.opps >= 5)
                       .sort((a, b) => Math.abs(b.mean - b.baseline) - Math.abs(a.mean - a.baseline))
@@ -270,7 +291,7 @@ export function ArenaPage() {
                           <span className="text-ink-300">{STAT_INFO[s.key as StatKey].label}</span>
                           <span className="tabular font-mono">
                             <span className="text-ink-100">{pct(s.mean)}</span>
-                            <span className="text-ink-500"> vs GTO {pct(s.baseline)}</span>
+                            <span className="text-ink-500"> vs {pct(s.baseline)} balanced</span>
                           </span>
                         </div>
                       ))}
@@ -280,11 +301,11 @@ export function ArenaPage() {
                 <div className="py-8 text-center text-sm text-ink-500">The opponent model fills in as hands are played.</div>
               )}
             </Panel>
-            <Panel title="How far the bot deviates from GTO">
+            <Panel title="How much it changes its play">
               <LineChart series={tiltSeries} height={180} xLabel="deals played" formatY={(v) => `${v.toFixed(0)}%`} empty="—" />
               <p className="mt-2 text-[11.5px] text-ink-400">
-                Total-variation distance between the bot's action-group mix and the blueprint (moving average). It starts near zero — the Bayesian
-                prior assumes a balanced opponent — and grows only as evidence of a leak accumulates. Against the GTO bot it stays flat.
+                Share of its decisions it plays differently from the balanced strategy. It starts near zero, because it assumes a balanced opponent
+                until the evidence says otherwise, then grows as leaks are confirmed. Against the Balanced AI it stays close to zero.
               </p>
             </Panel>
           </div>

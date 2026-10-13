@@ -29,7 +29,7 @@ export function AboutPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 pb-16 lg:px-6">
-      <section className="relative mb-10 mt-4 overflow-hidden rounded-3xl border border-white/5 p-8 sm:p-12" style={{ background: 'radial-gradient(800px 300px at 0% 0%, rgba(59,143,240,0.18), transparent 60%), radial-gradient(800px 300px at 100% 100%, rgba(232,95,42,0.16), transparent 60%), #0a0e17' }}>
+      <section className="relative mb-10 mt-4 overflow-hidden rounded-3xl border border-white/5 p-8 sm:p-12" style={{ background: 'radial-gradient(800px 320px at 0% 0%, rgba(214,178,110,0.14), transparent 60%), radial-gradient(800px 300px at 100% 100%, rgba(23,105,74,0.22), transparent 60%), #0c0e0d' }}>
         <div className="text-[11px] font-semibold uppercase tracking-[0.3em] text-ink-400">How it works</div>
         <h1 className="mt-3 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
           Play the equilibrium. <span className="text-gradient">Then exploit the human.</span>
@@ -155,6 +155,26 @@ export function AboutPage() {
         </Section>
       </div>
 
+      <Panel title="Fair play" className="mt-6">
+        <div className="grid gap-6 text-[14px] leading-relaxed text-ink-300 md:grid-cols-3">
+          <div>
+            <div className="mb-2 font-semibold text-ink-100">Same game, same odds</div>
+            Both players start every hand with 100 big blinds and the dealer button alternates, so blinds and position are shared equally. Cards are
+            shuffled with the browser's cryptographic random number generator.
+          </div>
+          <div>
+            <div className="mb-2 font-semibold text-ink-100">The AI never peeks</div>
+            At the table it uses only its own two cards, the board dealt so far and the betting. It learns your cards only when you show them down. A
+            unit test checks that its decisions are identical whatever your cards or the undealt board are.
+          </div>
+          <div>
+            <div className="mb-2 font-semibold text-ink-100">Training-only information stays in training</div>
+            The critic that sees both hands exists only in offline simulation to reduce variance; it is not part of the shipped bot. The "AI's thinking"
+            panel also hides the bot's odds until the hand is over.
+          </div>
+        </div>
+      </Panel>
+
       <Panel title="Engineering" className="mt-6">
         <div className="grid gap-6 text-[14px] text-ink-300 md:grid-cols-3">
           <div>
@@ -204,7 +224,7 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent?: 
 }
 
 function Section({ n, title, tone, children }: { n: string; title: string; tone: 'gto' | 'exploit' | 'gold'; children: ReactNode }) {
-  const c = tone === 'gto' ? 'from-gto/30 text-gto-hi' : tone === 'exploit' ? 'from-exploit/30 text-exploit-hi' : 'from-gold/30 text-amber-300';
+  const c = tone === 'gto' ? 'from-gto/30 text-gto-hi' : tone === 'exploit' ? 'from-exploit/30 text-exploit-hi' : 'from-gold/30 text-gold-hi';
   return (
     <section className="glass rounded-2xl p-6">
       <div className="mb-4 flex items-center gap-3">

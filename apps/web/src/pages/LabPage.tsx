@@ -35,7 +35,7 @@ export function LabPage() {
   return (
     <div className="mx-auto max-w-[1500px] px-4 pb-12 lg:px-6">
       <div className="mb-6 mt-2 max-w-3xl">
-        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
           Strategy <span className="text-gradient">Lab</span>
         </h1>
         <p className="mt-2 text-ink-300">
@@ -169,8 +169,8 @@ function PreflopExplorer({ bp }: { bp: Blueprint }) {
               </>
             ) : (
               <div className="text-sm text-ink-400">
-                Mixed colours inside a cell are <em>mixed strategies</em>: the equilibrium randomises between actions with the same hand so it
-                cannot be read. Notice the bluffs with weak suited hands mixed in with value hands.
+                Mixed colours inside a cell are <em>mixed strategies</em>: the equilibrium randomises between actions with the same hand, so its
+                actions don't give its cards away.
               </div>
             )}
           </div>
@@ -220,9 +220,9 @@ function PostflopExplorer({ bp }: { bp: Blueprint }) {
   return (
     <Panel title="Postflop strategy by hand strength">
       <p className="-mt-2 mb-4 max-w-3xl text-sm text-ink-300">
-        Each column is a card-abstraction bucket — hands grouped by percentile of E[HS²] (flop/turn) or hand strength (river). Read left→right from
-        air to the nuts: equilibrium play bets its strongest hands for value and a slice of its weakest as bluffs, checking the middle — a
-        <em> polarised</em> strategy that emerges from CFR without ever being programmed.
+        Each column is a group of similar-strength hands (a card-abstraction bucket, by percentile of E[HS²] on the flop and turn and hand strength on
+        the river). Read left to right from the weakest hands to the strongest and watch how the equilibrium mixes checks and bets of different sizes.
+        None of this was programmed by hand; it emerged from self-play.
       </p>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Segmented value={street} onChange={setStreet} options={[{ value: '1', label: 'Flop' }, { value: '2', label: 'Turn' }, { value: '3', label: 'River' }]} />

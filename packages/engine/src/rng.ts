@@ -46,3 +46,20 @@ export class Rng {
     return new Rng((this.next() * 2 ** 32) >>> 0);
   }
 }
+
+/**
+ * Cryptographically secure RNG (Web Crypto) for dealing real games, so no one
+ * — including the AI — can predict upcoming cards from a seed.
+ */
+export class CryptoRng extends Rng {
+  private buf = new Uint32Array(256);
+  private i = 256;
+
+  override next(): number {
+    if (this.i >= this.buf.length) {
+      globalThis.crypto.getRandomValues(this.buf);
+      this.i = 0;
+    }
+    return this.buf[this.i++] / 4294967296;
+  }
+}

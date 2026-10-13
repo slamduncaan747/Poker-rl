@@ -1,10 +1,10 @@
-import { CODE_LABELS, describeHand, evaluate } from '@poker-rl/engine';
+import { describeHand, evaluate } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { BrainTab } from '../components/brain/BrainTab';
 import { ReadTab } from '../components/brain/ReadTab';
 import { SessionTab } from '../components/brain/SessionTab';
-import { ActionBar, CODE_COLORS } from '../components/table/ActionBar';
+import { ActionBar } from '../components/table/ActionBar';
 import { Table } from '../components/table/Table';
 import { Segmented, Toggle } from '../components/ui/Controls';
 import { Welcome } from '../components/ui/Welcome';
@@ -16,10 +16,10 @@ type Tab = 'brain' | 'read' | 'session';
 export function PlayPage() {
   const [tab, setTab] = useState<Tab>('brain');
   return (
-    <div className="mx-auto grid max-w-[1500px] gap-5 px-4 pb-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:px-6">
+    <div className="mx-auto grid max-w-[1500px] gap-5 px-4 pb-10 pt-5 lg:grid-cols-[minmax(0,1fr)_400px] lg:px-6">
       <Welcome />
       <div className="flex min-w-0 flex-col gap-4">
-        <ExploitDial />
+        <ModeBar />
         <Table />
         <CoachStrip />
         <ActionBar />
@@ -30,9 +30,9 @@ export function PlayPage() {
             value={tab}
             onChange={setTab}
             options={[
-              { value: 'brain', label: 'AI X-Ray' },
-              { value: 'read', label: 'Read on You' },
-              { value: 'session', label: 'Session' },
+              { value: 'brain', label: "AI's thinking" },
+              { value: 'read', label: 'Your profile' },
+              { value: 'session', label: 'Results' },
             ]}
           />
           <SettingsButton />
@@ -49,38 +49,54 @@ export function PlayPage() {
   );
 }
 
-/** The headline control: how hard the bot exploits you. */
-function ExploitDial() {
+/** The headline control: balanced (GTO) vs adaptive (exploiting) opponent. */
+function ModeBar() {
   const lambda = usePlay((s) => s.settings.lambda);
   const setSettings = usePlay((s) => s.setSettings);
-  const hands = usePlay((s) => s.history.length);
-  const mode = lambda === 0 ? 'Pure GTO — unexploitable equilibrium play' : lambda < 0.5 ? 'Cautious exploitation' : lambda < 1 ? 'Balanced exploitation' : 'Full exploitation — maximise EV vs your leaks';
+  const adaptive = lambda > 0;
   return (
-    <div className="glass flex flex-col gap-3 rounded-2xl px-4 py-3 sm:flex-row sm:items-center sm:gap-5">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-1">
       <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-400">Bot strategy</div>
-        <div className="text-sm text-ink-100">{mode}</div>
+        <div className="font-display text-[26px] font-semibold leading-none text-ink-100">Heads-up No-Limit Hold'em</div>
+        <div className="mt-1.5 text-[12.5px] text-ink-400">
+          {adaptive
+            ? 'Adaptive AI: starts balanced, then learns your habits and punishes them.'
+            : 'Balanced AI: plays the equilibrium strategy and never adjusts to you.'}
+        </div>
       </div>
-      <div className="flex flex-1 items-center gap-3">
-        <span className="text-xs font-semibold text-gto-hi">GTO</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={lambda}
-          onChange={(e) => setSettings({ lambda: Number(e.target.value) })}
-          className="slider slider-exploit flex-1"
-          style={{ ['--fill' as string]: `${lambda * 100}%` }}
-          aria-label="Exploitation strength"
-        />
-        <span className="text-xs font-semibold text-exploit-hi">Exploit</span>
-        <span className="tabular w-10 text-right font-mono text-xs text-ink-300">λ {lambda.toFixed(2)}</span>
+      <div role="radiogroup" aria-label="AI mode" className="inline-flex rounded-full bg-black/40 p-1 ring-1 ring-gold/20">
+        {[
+          { v: 0, label: 'Balanced', dot: 'bg-gto' },
+          { v: 1, label: 'Adaptive', dot: 'bg-exploit' },
+        ].map((o) => {
+          const on = o.v === 0 ? !adaptive : adaptive;
+          return (
+            <button
+              key={o.label}
+              role="radio"
+              aria-checked={on}
+              onClick={() => setSettings({ lambda: o.v })}
+              className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] font-semibold transition ${on ? 'bg-gold/15 text-gold-hi ring-1 ring-gold/40' : 'text-ink-400 hover:text-ink-200'}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${o.dot}`} />
+              {o.label}
+            </button>
+          );
+        })}
       </div>
-      <div className="hidden text-right text-[11px] text-ink-400 xl:block">Hand #{hands + 1}</div>
     </div>
   );
 }
+
+function strengthLabel(e: number) {
+  if (e >= 0.8) return { word: 'Very strong', n: 5 };
+  if (e >= 0.65) return { word: 'Strong', n: 4 };
+  if (e >= 0.5) return { word: 'Decent', n: 3 };
+  if (e >= 0.35) return { word: 'Weak', n: 2 };
+  return { word: 'Very weak', n: 1 };
+}
+
+const VERB: Record<string, string> = { f: 'Fold', k: 'Check', c: 'Call', t: 'Bet small', h: 'Bet half pot', p: 'Bet pot', a: 'All-in' };
 
 function CoachStrip() {
   const state = usePlay((s) => s.state);
@@ -92,35 +108,47 @@ function CoachStrip() {
   const requestHint = usePlay((s) => s.requestHint);
   if (!coach || !state) return null;
   const [a, b] = state.holes(HUMAN);
-  const handName = state.board.length >= 3 ? describeHand(evaluate([a, b, ...state.board])) : a >> 2 === b >> 2 ? 'Pocket pair' : 'Preflop';
+  const handName = state.board.length >= 3 ? describeHand(evaluate([a, b, ...state.board])) : a >> 2 === b >> 2 ? 'Pocket pair' : (a & 3) === (b & 3) ? 'Suited cards' : 'Unpaired cards';
   const myTurn = phase === 'human';
+  const st = equity !== null ? strengthLabel(equity) : null;
+  const hintTop = hint
+    ? hint.codes
+        .map((c, i) => ({ c, p: hint.probs[i] }))
+        .filter((x) => x.p >= 0.12)
+        .sort((x, y) => y.p - x.p)
+    : [];
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[12px]">
-      <span className="rounded-md bg-gold/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-300 ring-1 ring-amber-300/20">Coach</span>
-      <span className="text-ink-300">
-        Hand: <span className="font-semibold text-ink-100">{handName}</span>
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-1 text-[13px]">
+      <span className="text-ink-400">
+        Your hand <span className="ml-1 font-semibold text-ink-100">{handName}</span>
       </span>
-      {equity !== null && (
-        <span className="text-ink-300">
-          Equity vs random hand: <span className="tabular font-mono font-semibold text-ink-100">{pct(equity)}</span>
+      {st && (
+        <span className="flex items-center gap-2 text-ink-400" title={`Win chance against a random hand: ${pct(equity!)}`}>
+          Strength
+          <span className="flex gap-[3px]">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <span key={i} className={`h-2.5 w-1.5 rounded-sm ${i <= st.n ? 'bg-gold' : 'bg-white/10'}`} />
+            ))}
+          </span>
+          <span className="font-semibold text-ink-100">{st.word}</span>
         </span>
       )}
       {myTurn && !hint && (
-        <button onClick={requestHint} className="rounded-md bg-white/5 px-2 py-0.5 text-ink-200 ring-1 ring-white/10 hover:bg-white/10">
+        <button onClick={requestHint} className="rounded-full px-3 py-1 text-[12px] font-semibold text-gold-hi ring-1 ring-gold/30 hover:bg-gold/10">
           Ask the solver
         </button>
       )}
       {hint && myTurn && (
-        <span className="flex flex-wrap items-center gap-1.5">
-          <span className="text-ink-400">Solver mix:</span>
-          {hint.codes.map((c, i) =>
-            hint.probs[i] > 0.01 ? (
-              <span key={c} className="flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/5">
-                <span className="h-2 w-2 rounded-sm" style={{ background: CODE_COLORS[c] }} />
-                {CODE_LABELS[c]} <span className="tabular font-mono text-ink-100">{pct(hint.probs[i])}</span>
+        <span className="flex flex-wrap items-center gap-1.5 text-ink-300">
+          Solver suggests
+          {hintTop.map((x, i) => (
+            <span key={x.c} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-ink-500">{i === hintTop.length - 1 ? 'or sometimes' : ','}</span>}
+              <span className="rounded-full bg-gold/10 px-2.5 py-0.5 font-semibold text-gold-hi ring-1 ring-gold/25" style={{ opacity: 0.6 + 0.4 * x.p }}>
+                {VERB[x.c]}
               </span>
-            ) : null,
-          )}
+            </span>
+          ))}
         </span>
       )}
     </div>
@@ -150,12 +178,28 @@ function SettingsButton() {
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               className="glass absolute right-0 top-11 z-50 w-[320px] rounded-2xl p-4"
             >
-              <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-ink-400">Settings</div>
-              <Toggle checked={settings.riskBudget} onChange={(v) => set({ riskBudget: v })} label="Safe exploitation" hint="Scale exploitation by the bot's winnings (risk budget)" />
-              <Toggle checked={settings.coach} onChange={(v) => set({ coach: v })} label="Coach mode" hint="Grade your decisions against the GTO blueprint" />
-              <Toggle checked={settings.showBotCards} onChange={(v) => set({ showBotCards: v })} label="Show bot's cards" hint="X-ray vision (for learning)" />
+              <div className="eyebrow mb-2">Settings</div>
+              <div className="py-1.5">
+                <div className="flex items-center justify-between text-sm text-ink-100">
+                  Adaptation strength <span className="tabular font-mono text-xs text-ink-400">{Math.round(settings.lambda * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={settings.lambda}
+                  onChange={(e) => set({ lambda: Number(e.target.value) })}
+                  className="slider slider-exploit mt-2 w-full"
+                  style={{ ['--fill' as string]: `${settings.lambda * 100}%` }}
+                  aria-label="Adaptation strength"
+                />
+              </div>
+              <Toggle checked={settings.riskBudget} onChange={(v) => set({ riskBudget: v })} label="Cautious adapting" hint="Only adapt as hard as the AI's winnings allow" />
+              <Toggle checked={settings.coach} onChange={(v) => set({ coach: v })} label="Coach" hint="Rate your decisions against the solver" />
+              <Toggle checked={settings.showBotCards} onChange={(v) => set({ showBotCards: v })} label="Practice mode" hint="Show the AI's cards and odds during the hand" />
               <Toggle checked={settings.autoDeal} onChange={(v) => set({ autoDeal: v })} label="Auto-deal next hand" />
-              <Toggle checked={settings.fourColor} onChange={(v) => set({ fourColor: v })} label="Four-colour deck" />
+              <Toggle checked={settings.fourColor} onChange={(v) => set({ fourColor: v })} label="Four-colour deck" hint="Different colour for each suit" />
               <Toggle checked={settings.sound} onChange={(v) => set({ sound: v })} label="Sound effects" />
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-ink-100">Bot speed</span>
@@ -174,9 +218,9 @@ function SettingsButton() {
                   reset();
                   setOpen(false);
                 }}
-                className="btn mt-2 w-full bg-rose-500/15 py-2 text-sm text-rose-300 ring-1 ring-rose-400/20 hover:bg-rose-500/25"
+                className="btn mt-2 w-full bg-white/[0.04] py-2 text-sm text-ink-200 ring-1 ring-white/10 hover:bg-white/[0.08]"
               >
-                Reset session &amp; bot's read
+                Start a new session
               </button>
             </motion.div>
           </>

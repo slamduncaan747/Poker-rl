@@ -41,12 +41,6 @@ export function RadarChart({ axes, size = 280, color = 'var(--color-exploit)', b
         <polygon points={poly(axes.map((a) => a.baseline))} fill="none" stroke={baseColor} strokeWidth={1.5} strokeDasharray="4 3" opacity={0.9} />
         <polygon points={poly(axes.map((a) => a.value))} fill={color} fillOpacity={0.16} stroke={color} strokeWidth={2} strokeLinejoin="round" />
         {axes.map((a, i) => {
-          if (a.lo === undefined || a.hi === undefined) return null;
-          const [x1, y1] = pt(i, Math.max(0.02, a.lo));
-          const [x2, y2] = pt(i, Math.min(1, a.hi));
-          return <line key={`ci${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeOpacity={0.45} strokeWidth={4} strokeLinecap="round" />;
-        })}
-        {axes.map((a, i) => {
           const [x, y] = pt(i, Math.max(0.02, Math.min(1, a.value)));
           const [lx, ly] = pt(i, 1.2);
           return (

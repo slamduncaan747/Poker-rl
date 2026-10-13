@@ -8,7 +8,7 @@ import {
   HUNLState,
   type StrategyLookup,
   OpponentModel,
-  Rng,
+  CryptoRng,
   describeHand,
   equityVsRandom,
   gradeDecision,
@@ -95,7 +95,8 @@ interface PlayStore {
   resetSession(): void;
 }
 
-const rng = new Rng();
+// Deals use a cryptographic RNG; the AI's own sampling uses the same stream.
+const rng = new CryptoRng();
 let timer: ReturnType<typeof setTimeout> | null = null;
 let decisionId = 0;
 let bubbleId = 0;
@@ -118,13 +119,13 @@ function loadSettings(): Settings {
     riskBudget: false,
     showBotCards: false,
     coach: true,
-    fourColor: true,
+    fourColor: false,
     sound: true,
     speed: 'normal',
     autoDeal: false,
   };
   try {
-    const s = localStorage.getItem('pokerrl.settings');
+    const s = localStorage.getItem('pokerrl.settings.v2');
     if (s) return { ...d, ...JSON.parse(s) };
   } catch {
     /* storage unavailable */
@@ -300,7 +301,7 @@ export const usePlay = create<PlayStore>((set, get) => {
     setSettings(p) {
       const settings = { ...get().settings, ...p };
       try {
-        localStorage.setItem('pokerrl.settings', JSON.stringify(settings));
+        localStorage.setItem('pokerrl.settings.v2', JSON.stringify(settings));
       } catch {
         /* ignore */
       }

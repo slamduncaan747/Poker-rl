@@ -2,11 +2,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { bb } from '../../lib/format';
 
 const DENOMS = [
-  { v: 5000, fill: '#b91c1c', edge: '#fecaca' },
-  { v: 1000, fill: '#ca8a04', edge: '#fef3c7' },
-  { v: 500, fill: '#7e22ce', edge: '#e9d5ff' },
-  { v: 100, fill: '#111827', edge: '#e5e7eb' },
-  { v: 25, fill: '#1d4ed8', edge: '#dbeafe' },
+  { v: 5000, fill: '#7a1e2a', edge: '#f3d7c4' },
+  { v: 1000, fill: '#b08a45', edge: '#fff4dc' },
+  { v: 500, fill: '#3b2f5c', edge: '#e6dcc8' },
+  { v: 100, fill: '#151515', edge: '#e9e1cf' },
+  { v: 25, fill: '#1f4f45', edge: '#e9e1cf' },
 ];
 
 export function Chip({ fill, edge, size = 22 }: { fill: string; edge: string; size?: number }) {
@@ -56,7 +56,7 @@ export function ChipStack({ amount, label = true, size = 22, className = '' }: {
         ))}
       </div>
       {label && (
-        <span className="tabular rounded-full bg-black/55 px-2 py-0.5 font-mono text-xs font-semibold text-amber-200 ring-1 ring-amber-300/20">
+        <span className="tabular rounded-full bg-black/55 px-2 py-0.5 text-xs font-semibold text-gold-hi ring-1 ring-gold/25">
           {bb(amount)} bb
         </span>
       )}

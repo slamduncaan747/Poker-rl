@@ -43,10 +43,10 @@ export function Table() {
           <div className={`table-felt relative h-full w-full overflow-hidden ${narrow ? 'rounded-[170px]' : 'rounded-[999px]'}`}>
             <div className="felt-noise pointer-events-none absolute inset-0" />
             <div className="spotlight pointer-events-none absolute inset-0" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-[25%] text-center font-display text-[11px] font-semibold uppercase tracking-[0.5em] text-emerald-200/15">
-              Poker · RL — Heads-Up No-Limit
+            <div className="pointer-events-none absolute inset-x-0 bottom-[23%] text-center font-display text-[22px] italic tracking-[0.12em] text-[#d6b26e]/20">
+              Poker RL
             </div>
-            <div className="pointer-events-none absolute left-1/2 top-[18%] h-[64%] w-[78%] -translate-x-1/2 rounded-[999px] border border-amber-200/10" />
+            <div className="pointer-events-none absolute left-1/2 top-[18%] h-[64%] w-[78%] -translate-x-1/2 rounded-[999px] border border-[#d6b26e]/10" />
 
             {state && (
               <>
@@ -59,7 +59,7 @@ export function Table() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div className="tabular font-mono text-[11px] uppercase tracking-widest text-emerald-100/50">
+                  <div className="tabular text-[11px] font-semibold uppercase tracking-[0.2em] text-[#efe9dc]/55">
                     Pot {bb(state.pot)} bb
                   </div>
                 </div>
@@ -78,7 +78,7 @@ export function Table() {
                         dim={showdown && winners.length > 0 && !winners.includes(c)}
                       />
                     ) : (
-                      <div key={`slot${i}`} className="h-[110px] w-[78px] rounded-[10px] border border-dashed border-emerald-100/10 bg-black/5" />
+                      <div key={`slot${i}`} className="h-[110px] w-[78px] rounded-[10px] border border-[#d6b26e]/10 bg-black/10" />
                     );
                   })}
                 </div>
@@ -135,9 +135,9 @@ function IdleFelt() {
       <button
         onClick={newHand}
         disabled={phase === 'loading'}
-        className="btn bg-gradient-to-b from-amber-300 to-amber-500 px-8 py-3 text-base text-amber-950 shadow-[0_10px_30px_-8px_rgba(251,191,36,0.7)] hover:from-amber-200 hover:to-amber-400"
+        className="btn btn-gold px-8 py-3 text-base"
       >
-        Deal me in <span className="kbd border-amber-900/30 text-amber-950">Space</span>
+        Deal the first hand
       </button>
     </div>
   );
@@ -193,17 +193,17 @@ function Seat({ seat, state, bubble, faceUp, winners, thinking }: SeatProps) {
         >
           {isBot ? <BotAvatar thinking={thinking && !!toAct} /> : <HumanAvatar />}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-sm font-semibold">
+            <div className="flex items-center gap-1.5 font-display text-[17px] font-semibold leading-none">
               {isBot ? 'Poker RL' : 'You'}
               {isButton && (
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-b from-white to-slate-300 text-[10px] font-black text-slate-900 shadow">
+                <span title="Dealer button" className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-b from-[#fffdf8] to-[#d9d0bd] font-sans text-[10px] font-black text-[#241a08] shadow">
                   D
                 </span>
               )}
-              {state && !isButton && <span className="rounded bg-white/10 px-1 text-[9px] font-bold text-ink-300">BB</span>}
+              {state && !isButton && <span className="rounded bg-white/10 px-1 font-sans text-[9px] font-bold text-ink-300">BB</span>}
             </div>
-            <div className="tabular font-mono text-[13px] text-amber-200">
-              {allIn ? <span className="font-bold text-rose-300">ALL-IN</span> : `${bb(stack)} bb`}
+            <div className="tabular text-[13px] font-semibold text-gold-hi">
+              {allIn ? <span className="font-bold text-loss">All-in</span> : `${bb(stack)} bb`}
             </div>
             {isBot && <BotSubtitle />}
           </div>
@@ -232,13 +232,12 @@ function Seat({ seat, state, bubble, faceUp, winners, thinking }: SeatProps) {
 function bubbleColor(kind: string) {
   switch (kind) {
     case 'fold':
-      return 'bg-slate-600 text-slate-100';
+      return 'bg-ink-700 text-ink-200 ring-1 ring-white/10';
     case 'check':
-      return 'bg-emerald-600 text-white';
     case 'call':
-      return 'bg-emerald-500 text-emerald-950';
+      return 'bg-[#123d2e] text-[#bfeedd] ring-1 ring-[#5fd3a0]/30';
     default:
-      return 'bg-rose-500 text-white';
+      return 'bg-[#3a2a12] text-gold-hi ring-1 ring-gold/40';
   }
 }
 
@@ -247,8 +246,8 @@ function BotSubtitle() {
   const hands = usePlay((s) => s.bot?.model.hands ?? 0);
   usePlay((s) => s.version);
   return (
-    <div className="truncate text-[10px] uppercase tracking-wider text-ink-400">
-      {lambda === 0 ? <span className="text-gto-hi">Pure GTO</span> : <span className="text-exploit-hi">Exploiting · read {hands}h</span>}
+    <div className="mt-0.5 truncate text-[10.5px] text-ink-400">
+      {lambda === 0 ? 'Balanced mode' : hands < 10 ? 'Adaptive · learning you' : `Adaptive · ${hands} hands read`}
     </div>
   );
 }
@@ -258,14 +257,14 @@ export function BotAvatar({ thinking, size = 44 }: { thinking: boolean; size?: n
     <div className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
       <motion.div
         className="absolute inset-0 rounded-full"
-        style={{ background: 'conic-gradient(from 0deg, #3b8ff0, #e85f2a, #fbbf24, #3b8ff0)' }}
+        style={{ background: 'conic-gradient(from 0deg, #f0d9a4, #8a6a30, #d6b26e, #3d2e14, #f0d9a4)' }}
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: thinking ? 1.2 : 8, ease: 'linear' }}
       />
       <div className="absolute inset-[2px] rounded-full bg-ink-900" />
       <motion.div
         className="relative h-[46%] w-[46%] rounded-full"
-        style={{ background: 'radial-gradient(circle at 35% 35%, #ffd2bd, #e85f2a 50%, #10325e)' }}
+        style={{ background: 'radial-gradient(circle at 35% 30%, #fff1cf, #d6b26e 45%, #3d2e14)' }}
         animate={thinking ? { scale: [1, 1.18, 1] } : { scale: 1 }}
         transition={{ repeat: Infinity, duration: 0.9 }}
       />
@@ -275,8 +274,8 @@ export function BotAvatar({ thinking, size = 44 }: { thinking: boolean; size?: n
 
 function HumanAvatar() {
   return (
-    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-200 to-amber-500 text-lg font-black text-amber-950 shadow-inner ring-2 ring-amber-200/30">
-      ★
+    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#f0d9a4] to-[#9c7a3e] font-display text-xl font-bold text-[#241a08] ring-2 ring-[#d6b26e]/30">
+      Y
     </div>
   );
 }
@@ -311,21 +310,21 @@ function ResultBanner({ narrow }: { narrow: boolean }) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-      className={narrow ? 'absolute left-1/2 top-[17%] z-30 -translate-x-1/2' : 'absolute left-[76px] top-1/2 z-30 w-[230px] -translate-y-1/2'}
+      className={narrow ? 'absolute left-1/2 top-[17%] z-30 -translate-x-1/2' : 'absolute left-[58px] top-1/2 z-30 w-[188px] -translate-y-1/2'}
     >
       {won && <Burst />}
       <div
         className={`glass relative flex ${narrow ? 'items-center gap-4' : 'flex-col items-start gap-3'} rounded-2xl px-5 py-3.5 ${
-          won ? 'ring-1 ring-emerald-300/40' : split ? '' : 'ring-1 ring-rose-300/30'
+          won ? 'ring-1 ring-win/40' : split ? '' : 'ring-1 ring-loss/30'
         }`}
       >
         <div>
-          <div className={`font-display text-xl font-bold ${won ? 'text-win' : split ? 'text-ink-100' : 'text-loss'}`}>{title}</div>
+          <div className={`font-display text-[24px] font-semibold leading-tight ${won ? 'text-win' : split ? 'text-ink-100' : 'text-loss'}`}>{title}</div>
           <div className="text-xs text-ink-300">{sub}</div>
         </div>
         {!autoDeal && (
           <button onClick={newHand} className="btn whitespace-nowrap bg-white/10 px-4 py-2 text-sm hover:bg-white/20">
-            Next hand <span className="kbd">Space</span>
+            Next hand
           </button>
         )}
       </div>
@@ -344,7 +343,7 @@ function Burst() {
           <motion.span
             key={i}
             className="absolute h-2 w-2 rounded-full"
-            style={{ background: ['#fbbf24', '#34d399', '#e85f2a', '#3b8ff0'][i % 4] }}
+            style={{ background: ['#f0d9a4', '#d6b26e', '#5fd3a0', '#efe9dc'][i % 4] }}
             initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
             animate={{ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.6, opacity: 0, scale: 0.3 }}
             transition={{ duration: 1.1, ease: 'easeOut' }}

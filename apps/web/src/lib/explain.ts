@@ -1,18 +1,36 @@
-import {
-  type AIAgent,
-  type DecisionInfo,
-  GROUPS,
-  STAT_INFO,
-  type StatKey,
-} from '@poker-rl/engine';
+import { type AIAgent, type DecisionInfo, STAT_INFO, type StatKey } from '@poker-rl/engine';
 import { pct } from './format';
 
 export interface Reason {
   stat: string;
   label: string;
   detail: string;
+  /** plain-English sentence, e.g. "You fold to bets 64% of the time (a balanced player: 39%)." */
+  sentence: string;
   weight: number;
 }
+
+/** What each tendency means, phrased as something the player does. */
+export const STAT_PHRASE: Record<StatKey, string> = {
+  vpip: 'play',
+  pfr: 'raise preflop',
+  sbOpen: 'open-raise the button',
+  limp: 'just call from the button',
+  foldVsOpen: 'fold your big blind to a raise',
+  threeBet: 're-raise an open',
+  foldTo3bet: 'fold to a re-raise',
+  cbet: 'bet the flop after raising preflop',
+  foldToCbet: 'fold to a flop continuation bet',
+  postBet: 'bet when checked to',
+  foldToBet: 'fold when facing a bet',
+  raiseVsBet: 'raise when facing a bet',
+  foldRiver: 'fold to a river bet',
+  wtsd: 'go to showdown after the flop',
+  bluffShow: 'turn out to be bluffing when you bet late',
+  lightCall: 'call the river with a weak hand',
+};
+
+export const GROUP_PHRASE = ['folding', 'checking and calling', 'small bets', 'big bets and raises'];
 
 export interface Explanation {
   headline: string;
@@ -31,7 +49,7 @@ export interface Explanation {
 export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
   if (info.lambda <= 0 || !agent.actor) {
     return {
-      headline: 'Exploitation is off — playing the CFR equilibrium strategy.',
+      headline: 'Playing the balanced, unexploitable strategy.',
       tone: 'gto',
       shiftGroup: null,
       shiftFrom: 0,
@@ -53,8 +71,8 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
     return {
       headline:
         agent.model.hands < 8
-          ? 'Still gathering evidence — staying close to equilibrium.'
-          : 'No exploitable edge in this spot — playing near-GTO.',
+          ? 'Still getting to know you, so it plays the balanced strategy.'
+          : 'No reliable edge against you in this spot, so it stays balanced.',
       tone: 'neutral',
       shiftGroup: null,
       shiftFrom: 0,
@@ -76,6 +94,7 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
           stat: 'betSize',
           label: 'Bet sizing',
           detail: `average bet ${pct(agent.model.betSize())} of pot (GTO ~${pct(agent.model.baselineBetSize)})`,
+          sentence: `Your bets average ${pct(agent.model.betSize())} of the pot (a balanced player: about ${pct(agent.model.baselineBetSize)}).`,
           weight: w,
         };
       }
@@ -83,16 +102,19 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
       const s = snap.stats.find((x) => x.key === k)!;
       const info2 = STAT_INFO[k];
       const obs = s.raw === null ? 'no data yet' : `${pct(s.raw)} (${s.hits}/${s.opps})`;
+      // Quote the posterior estimate the bot actually uses, hedged while evidence is thin.
+      const share = `${s.opps < 20 ? 'about ' : ''}${pct(s.mean)}`;
+      const subject = k === 'vpip' || k === 'pfr' ? `${share} of hands` : `${share} of the time`;
       return {
         stat: k,
         label: info2.label,
         detail: `${obs} vs GTO ${pct(s.baseline)}`,
+        sentence: `You ${STAT_PHRASE[k]} ${subject} — a balanced player: ${pct(s.baseline)}.`,
         weight: w,
       };
     });
-  const verb = up ? 'More' : 'Less';
   return {
-    headline: `${verb} ${GROUPS[best].toLowerCase()}: ${pct(info.groupBlueprint[best])} → ${pct(info.groupFinal[best])}`,
+    headline: `Leaning ${up ? 'toward' : 'away from'} ${GROUP_PHRASE[best]} compared with balanced play.`,
     tone: 'exploit',
     shiftGroup: best,
     shiftFrom: info.groupBlueprint[best],

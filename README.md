@@ -12,6 +12,8 @@ A Monte Carlo CFR equilibrium blueprint, a Bayesian opponent model, and a PPO-tr
 
 ![Play](docs/screenshots/play.png)
 
+**[▶ Play the live demo](https://claude.ai/artifact/7VQytEBf34wyBsFZ3qEsbJ)** · or run it locally with `npm install && npm run dev`
+
 ---
 
 ## Highlights
@@ -28,19 +30,43 @@ A Monte Carlo CFR equilibrium blueprint, a Bayesian opponent model, and a PPO-tr
 
 ## The demo
 
-- **Play** — a fully animated table (3D card flips, chip physics, synthesized sound, keyboard shortcuts, phone layout). Slide the **GTO ↔ Exploit** dial to change how hard the bot attacks you.
-  - **AI X-Ray** — blueprint vs exploit-adjusted probabilities for every bot decision, the network's tilt per action group, and the opponent tendencies that drove it.
-  - **Read on You** — radar of your posteriors vs GTO with credible intervals, "You play like…" archetype match, and the specific leaks the bot is targeting with advice.
-  - **Coach** — every decision you make is graded against the blueprint (Best / Good / Inaccuracy / Mistake / Blunder), with an accuracy score and an "Ask the solver" hint.
-- **Arena** — Exploit AI and pure GTO play the *same* deals against any archetype (or a custom opponent you design with sliders) in a Web Worker; watch the curves separate and the bot's deviation from GTO grow as evidence accumulates.
+- **Play** — an animated card-room table (3D card flips, chips, synthesized sound, keyboard shortcuts, phone layout). Choose a **Balanced** (pure GTO) or **Adaptive** opponent.
+  - **AI's thinking** — after each bot move, a plain-English account of whether it is playing balanced or adapting to you and which of your habits it's reacting to. Its odds and hand strength unlock when the hand ends; the raw probabilities, tilt and infoset sit under *Technical details*.
+  - **Your profile** — the archetype the AI reads you as, the habits it's confident about with advice, and a radar of your style vs balanced play.
+  - **Coach** — every decision is rated against the solver ("Great play", "the solver prefers to fold"), with an accuracy score and an "Ask the solver" hint.
+- **Arena** — the Adaptive and Balanced AIs play the *same* deals against any archetype (or a custom opponent you design with sliders) in a Web Worker; watch the curves separate and the bot's deviation from balanced play grow as evidence accumulates.
 - **Strategy Lab** — 13×13 preflop range explorer across seven scenarios, and postflop strategy-by-hand-strength charts that show the polarised bet/check structure CFR discovers on its own.
 - **How it works** — architecture diagram, convergence and RL training curves, evaluation results and references.
 
 ![Arena](docs/screenshots/arena.png)
 
+![Strategy Lab](docs/screenshots/lab.png)
+
 ## Results
 
-<!-- RESULTS -->
+Win rates in **big blinds per 100 hands** (95% CI), duplicate format, 30,000 hands per cell. Both bots start each match knowing nothing about the opponent.
+
+| Opponent | Balanced AI (GTO only) | Adaptive AI (GTO + RL) | Gain |
+|---|---:|---:|---:|
+| Calling Station | +53 ± 16 | **+381 ± 24** | +328 |
+| Maniac | +83 ± 21 | **+183 ± 26** | +100 |
+| Nit | +23 ± 7 | **+52 ± 7** | +28 |
+| TAG Regular | +11 ± 11 | **+58 ± 12** | +47 |
+| LAG Aggro | +34 ± 14 | **+88 ± 17** | +55 |
+| Scared Money | +33 ± 6 | **+65 ± 7** | +32 |
+| Passive Fish | +39 ± 10 | **+115 ± 14** | +76 |
+| GTO Blueprint | -10 ± 12 | **+2 ± 13** | +12 |
+
+- The blueprint (66M MCCFR iterations, 39,795 infosets) already beats every archetype.
+- The RL layer (4.7M training hands) multiplies those win rates by 2–7× against every leaky style, with non-overlapping intervals.
+- Against the blueprint itself it breaks even, so it doesn't invent leaks that aren't there.
+
+## Fair play
+
+- Both players start every hand with 100 big blinds and the button alternates.
+- Live deals use the browser's cryptographic RNG (`crypto.getRandomValues`).
+- At the table the AI uses only its own hole cards, the board dealt so far and the betting; it learns your cards only at showdown. [`fairness.test.ts`](packages/engine/test/fairness.test.ts) checks that its policy is identical whatever your cards and the undealt board are.
+- The critic that sees both hands exists only in offline training. The "AI's thinking" panel keeps the bot's odds hidden until the hand ends.
 
 ## Architecture
 
@@ -86,13 +112,14 @@ npm install
 npm run dev            # http://localhost:5173 — trained models are committed
 npm test               # engine unit tests
 npm run typecheck
+npm run build:artifact -w apps/web   # single-file build (inline JS/CSS, blob worker)
 ```
 
 ### Re-train from scratch
 
 ```bash
 npm run train:blueprint -- --minutes 70 --workers 3 --buckets 32   # → apps/web/public/models/blueprint.json
-npm run train:exploit   -- --minutes 40 --workers 4                # → apps/web/public/models/exploit.json
+npm run train:exploit   -- --minutes 45 --workers 4 --evalDeals 15000   # → apps/web/public/models/exploit.json
 ```
 
 `train:exploit` also measures equilibrium baseline frequencies (blueprint self-play), archetype signatures, and runs the duplicate evaluation shown above.

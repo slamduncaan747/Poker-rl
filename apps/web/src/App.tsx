@@ -54,15 +54,17 @@ export function App() {
 
 function Header({ route }: { route: Route }) {
   return (
-    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className="sticky z-30 border-b border-white/5 bg-ink-950/70 backdrop-blur-xl">
-      <div className="mx-auto flex h-[60px] max-w-[1500px] items-center gap-4 px-4 lg:px-6">
+    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className="sticky z-30 border-b border-gold/10 bg-ink-950/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-[64px] max-w-[1500px] items-center gap-4 px-4 lg:px-6">
         <a href="#play" className="flex items-center gap-2.5">
-          <div className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-gto to-exploit text-lg font-black text-white shadow-lg">♠</div>
+          <div className="grid h-9 w-9 place-items-center rounded-full text-[17px] text-gold-hi ring-1 ring-gold/50" style={{ background: 'radial-gradient(circle at 35% 30%, #2a2418, #0c0e0d)' }}>
+            ♠
+          </div>
           <div className="leading-tight">
-            <div className="font-display text-[15px] font-bold tracking-tight">
-              Poker<span className="text-gradient">RL</span>
+            <div className="whitespace-nowrap font-display text-[21px] font-semibold tracking-tight text-ink-100">
+              Poker <span className="text-gradient">RL</span>
             </div>
-            <div className="hidden text-[10px] text-ink-400 sm:block">GTO blueprint × RL exploitation</div>
+            <div className="hidden text-[10.5px] text-ink-400 sm:block">Game theory meets reinforcement learning</div>
           </div>
         </a>
         <nav className="ml-auto flex gap-1 overflow-x-auto">
@@ -70,9 +72,9 @@ function Header({ route }: { route: Route }) {
             <a
               key={r.id}
               href={`#${r.id}`}
-              className={`relative whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-medium transition ${route === r.id ? 'text-white' : 'text-ink-400 hover:text-ink-200'}`}
+              className={`relative whitespace-nowrap rounded-lg px-3 py-1.5 text-[13.5px] font-semibold transition ${route === r.id ? 'text-gold-hi' : 'text-ink-400 hover:text-ink-200'}`}
             >
-              {route === r.id && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-lg bg-white/10 ring-1 ring-white/10" />}
+              {route === r.id && <motion.span layoutId="nav-pill" className="absolute inset-x-2 -bottom-[13px] h-[2px] rounded-full bg-gold" />}
               <span className="relative hidden sm:inline">{r.label}</span>
               <span className="relative sm:hidden">{r.short}</span>
             </a>
@@ -89,17 +91,17 @@ function Loading() {
   return (
     <div className="grid min-h-[70vh] place-items-center px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
-        <div className="font-display text-2xl font-bold">
-          Poker<span className="text-gradient">RL</span>
+        <div className="font-display text-3xl font-semibold">
+          Poker <span className="text-gradient">RL</span>
         </div>
         {error ? (
           <div className="text-sm text-loss">Couldn't load the models: {error}</div>
         ) : (
           <>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-gto to-exploit" animate={{ width: `${Math.max(6, p * 100)}%` }} />
+              <motion.div className="h-full rounded-full bg-gold" animate={{ width: `${Math.max(6, p * 100)}%` }} />
             </div>
-            <div className="text-xs text-ink-400">Loading the CFR blueprint and policy network…</div>
+            <div className="text-xs text-ink-400">Shuffling up and loading the AI…</div>
           </>
         )}
       </div>

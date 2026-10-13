@@ -4,19 +4,19 @@ import { usePlay } from '../../lib/store';
 
 const STEPS = [
   {
-    icon: '⚖️',
-    title: 'It starts unexploitable',
-    body: 'A Monte Carlo CFR blueprint — an approximate Nash equilibrium for heads-up no-limit hold’em — is the bot’s default strategy.',
+    icon: 'I',
+    title: 'It starts balanced',
+    body: 'Its default strategy is a game-theory equilibrium computed by self-play. Nobody can beat it in the long run.',
   },
   {
-    icon: '🔍',
-    title: 'It studies you',
-    body: 'Every hand updates a Bayesian model of 16 of your tendencies. Watch it form a read in the “Read on You” tab.',
+    icon: 'II',
+    title: 'It watches you',
+    body: 'Every hand, it updates its read on your habits: how often you fold, bluff, or call. See it in “Your profile”.',
   },
   {
-    icon: '🎯',
-    title: 'Then it exploits your leaks',
-    body: 'A PPO-trained policy network tilts the blueprint toward the plays that punish your tendencies — and explains why in the AI X-Ray.',
+    icon: 'III',
+    title: 'It adapts',
+    body: 'A reinforcement-learned layer shifts its play to punish your habits, and tells you why in “AI’s thinking”.',
   },
 ];
 
@@ -51,29 +51,30 @@ export function Welcome() {
             transition={{ type: 'spring', stiffness: 240, damping: 22 }}
             className="glass w-full max-w-[640px] rounded-3xl p-6 sm:p-8"
           >
-            <div className="text-[11px] font-semibold uppercase tracking-[0.3em] text-ink-400">Heads-up No-Limit Hold’em</div>
-            <h2 className="mt-2 font-display text-3xl font-bold leading-tight">
-              Can you beat an AI that <span className="text-gradient">learns your weaknesses?</span>
+            <div className="eyebrow">Heads-up No-Limit Hold’em · 100 big blinds deep</div>
+            <h2 className="mt-3 font-display text-[40px] font-semibold leading-[1.05]">
+              Can you beat an AI that <span className="text-gradient italic">learns your weaknesses?</span>
             </h2>
+            <p className="mt-3 max-w-[520px] text-[14px] leading-relaxed text-ink-300">
+              A fair game: both players get the same blinds and stacks, the deck is shuffled with cryptographic randomness, and the AI only sees its own two cards
+              and the board.
+            </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {STEPS.map((s, i) => (
-                <motion.div key={s.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.1 }} className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/5">
-                  <div className="text-2xl">{s.icon}</div>
+                <motion.div key={s.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.1 }} className="rounded-2xl bg-white/[0.025] p-4 ring-1 ring-gold/10">
+                  <div className="font-display text-2xl font-semibold text-gold">{s.icon}</div>
                   <div className="mt-2 text-sm font-semibold text-ink-100">{s.title}</div>
                   <div className="mt-1 text-[12.5px] leading-relaxed text-ink-400">{s.body}</div>
                 </motion.div>
               ))}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-[12px] text-ink-400">
-                Keys: <span className="kbd">F</span> fold · <span className="kbd">C</span> check/call · <span className="kbd">R</span> raise · <span className="kbd">1-6</span> sizes ·{' '}
-                <span className="kbd">Space</span> deal
-              </div>
+              <div className="hidden text-[12px] text-ink-500 sm:block">Tip: keys F, C and R fold, call and raise; Space deals.</div>
               <div className="flex gap-2">
                 <a href="#how" onClick={() => close(false)} className="btn rounded-xl bg-white/5 px-4 py-2.5 text-sm text-ink-200 ring-1 ring-white/10 hover:bg-white/10">
                   How it works
                 </a>
-                <button onClick={() => close(true)} className="btn rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 px-5 py-2.5 text-sm text-amber-950 hover:from-amber-200">
+                <button onClick={() => close(true)} className="btn btn-gold rounded-xl px-6 py-2.5 text-sm">
                   Deal me in
                 </button>
               </div>
