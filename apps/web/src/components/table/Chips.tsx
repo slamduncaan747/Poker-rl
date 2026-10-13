@@ -62,7 +62,7 @@ export function ChipStack({
 }
 
 /** A street bet in front of a seat that animates in and out. */
-export function BetChips({ amount, id, color }: { amount: number; id: string; color?: string }) {
+export function BetChips({ amount, id, color, exitTo }: { amount: number; id: string; color?: string; exitTo?: { x: number; y: number } }) {
   return (
     <AnimatePresence>
       {amount > 0 && (
@@ -70,7 +70,7 @@ export function BetChips({ amount, id, color }: { amount: number; id: string; co
           key={id}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
+          exit={exitTo ? { x: exitTo.x, y: exitTo.y, opacity: 0, transition: { duration: 0.45, ease: 'easeInOut' } } : { opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 24 }}
         >
           <ChipStack amount={amount} size={20} color={color} />

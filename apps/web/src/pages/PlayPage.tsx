@@ -1,17 +1,13 @@
-import { STREET_NAMES, describeHand, evaluate } from '@poker-rl/engine';
+import { STREET_NAMES } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { BrainTab } from '../components/brain/BrainTab';
-import { ReadTab } from '../components/brain/ReadTab';
-import { SessionTab } from '../components/brain/SessionTab';
+import { HandReview } from '../components/brain/HandReview';
+import { SeesYou } from '../components/brain/SeesYou';
 import { ActionBar } from '../components/table/ActionBar';
 import { Table } from '../components/table/Table';
 import { Segmented, Toggle } from '../components/ui/Controls';
 import { Welcome } from '../components/ui/Welcome';
-import { pct } from '../lib/format';
-import { HUMAN, usePlay } from '../lib/store';
-
-type Tab = 'brain' | 'read' | 'session';
+import { usePlay } from '../lib/store';
 
 function useWide() {
   const q = '(min-width: 1024px)';
@@ -26,60 +22,51 @@ function useWide() {
 }
 
 export function PlayPage() {
-  const [tab, setTab] = useState<Tab>('brain');
   const wide = useWide();
+  const [sees, setSees] = useState(false);
+  const phase = usePlay((s) => s.phase);
+  const handNo = usePlay((s) => s.handNo);
+  const last = usePlay((s) => s.history[s.history.length - 1]);
+  const review = phase === 'over' && last && last.id === handNo ? last : null;
   return (
-    <div className="mx-auto grid max-w-[1400px] gap-6 px-4 pb-10 pt-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-6">
+    <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-3 sm:pt-5 lg:px-6">
       <Welcome />
-      <div className="flex min-w-0 flex-col gap-3">
-        <ModeBar />
-        <Table />
-        <CoachStrip />
-        {!wide && (
-          <div className="sticky bottom-0 z-20 -mx-4 border-t border-ink-600 bg-ink-950 px-4 pt-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-            <ActionBar />
-          </div>
-        )}
-      </div>
-      <aside className="glass flex min-h-[520px] flex-col lg:sticky lg:top-[70px] lg:max-h-[calc(100vh-90px)]">
-        <div role="tablist" aria-label="Panel" className="grid grid-cols-3 border-b border-ink-100 font-mono text-[11px] tracking-[0.08em]">
-          {(
-            [
-              { value: 'brain', label: 'AI' },
-              { value: 'read', label: 'YOU' },
-              { value: 'session', label: 'RESULTS' },
-            ] as Array<{ value: Tab; label: string }>
-          ).map((o, i) => (
-            <button
-              key={o.value}
-              role="tab"
-              aria-selected={tab === o.value}
-              onClick={() => setTab(o.value)}
-              className={`min-h-[42px] ${i > 0 ? 'border-l border-ink-600' : ''} ${tab === o.value ? 'bg-ink-100 font-bold text-ink-950' : 'text-ink-400 hover:text-ink-100'}`}
+      <ModeBar onSees={() => setSees(true)} />
+      <div className={`mt-2 grid gap-6 sm:mt-3 ${review && wide ? 'grid-cols-[minmax(0,1fr)_340px]' : ''}`}>
+        <div className="mx-auto flex w-full min-w-0 max-w-[1000px] flex-col gap-3">
+          <Table />
+          {wide ? (
+            <div className="mx-auto w-full max-w-[600px]">
+              <ActionBar />
+            </div>
+          ) : (
+            <div className="sticky bottom-0 z-20 -mx-4 border-t border-ink-600 bg-ink-950 px-4 pt-2.5" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+              <ActionBar />
+            </div>
+          )}
+        </div>
+        <AnimatePresence>
+          {review && (
+            <motion.aside
+              key={`review-${review.id}`}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="glass self-start p-4 lg:sticky lg:top-[70px]"
+              aria-label="Hand review"
             >
-              {o.label}
-            </button>
-          ))}
-        </div>
-        <div className="scrollbar-thin flex-1 overflow-y-auto p-4">
-          <AnimatePresence mode="wait">
-            <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-              {tab === 'brain' ? <BrainTab /> : tab === 'read' ? <ReadTab /> : <SessionTab />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        {wide && (
-          <div className="border-t border-ink-600 p-3.5">
-            <ActionBar />
-          </div>
-        )}
-      </aside>
+              <HandReview h={review} onSeeRead={() => setSees(true)} />
+            </motion.aside>
+          )}
+        </AnimatePresence>
+      </div>
+      <SeesYou open={sees} onClose={() => setSees(false)} />
     </div>
   );
 }
 
 /** Hand number and street on the left; balanced/adaptive switch and settings on the right. */
-function ModeBar() {
+function ModeBar({ onSees }: { onSees: () => void }) {
   const lambda = usePlay((s) => s.settings.lambda);
   const setSettings = usePlay((s) => s.setSettings);
   const handNo = usePlay((s) => s.handNo);
@@ -89,23 +76,31 @@ function ModeBar() {
   const adaptive = lambda > 0;
   const net = history.reduce((a, h) => a + h.net, 0) / 100;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-2">
       <div className="flex border border-ink-600 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
         <span className="px-2.5 py-1.5">
-          HAND <span className="text-ink-100">{String(handNo).padStart(3, '0')}</span>
+          <span className="hidden sm:inline">HAND </span>#<span className="text-ink-100">{String(handNo).padStart(3, '0')}</span>
         </span>
         {state && (
           <span className="border-l border-ink-600 px-2.5 py-1.5 uppercase text-ink-100">{state.terminal ? 'Done' : STREET_NAMES[state.street]}</span>
         )}
-        <span className="border-l border-ink-600 px-2.5 py-1.5">
+        <span className="hidden border-l border-ink-600 px-2.5 py-1.5 sm:inline">
           SESSION <span className={`tabular ${net > 0 ? 'text-gold' : 'text-ink-100'}`}>{net > 0 ? '+' : ''}{net.toFixed(net % 1 === 0 ? 0 : 1)}</span>
         </span>
       </div>
       <div className="flex items-center gap-2">
+        <button onClick={onSees} className="flex min-h-[38px] items-center gap-2 border border-ink-600 px-3 font-mono text-[11px] tracking-[0.08em] text-ink-100 hover:border-ink-100">
+          <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4">
+            <path d="M1 6 C4 1 12 1 15 6 C12 11 4 11 1 6 Z" />
+            <rect x="6.5" y="4.5" width="3" height="3" fill="currentColor" />
+          </svg>
+          <span className="hidden sm:inline">HOW NASH SEES YOU</span>
+          <span className="sm:hidden">READ</span>
+        </button>
         <div role="radiogroup" aria-label="AI mode" className="flex border border-ink-600 font-mono text-[11px] tracking-[0.08em]">
           {[
-            { v: 0, label: 'BALANCED' },
-            { v: 1, label: 'ADAPTIVE' },
+            { v: 0, label: 'BALANCED', short: 'BAL' },
+            { v: 1, label: 'ADAPTIVE', short: 'ADAPT' },
           ].map((o) => {
             const on = o.v === 0 ? !adaptive : adaptive;
             return (
@@ -114,76 +109,17 @@ function ModeBar() {
                 role="radio"
                 aria-checked={on}
                 onClick={() => setSettings({ lambda: o.v })}
+                aria-label={o.label}
                 className={`min-h-[36px] px-3 transition ${on ? 'bg-ink-100 font-bold text-ink-950' : 'text-ink-400 hover:text-ink-100'}`}
               >
-                {o.label}
+                <span className="hidden sm:inline">{o.label}</span>
+                <span className="sm:hidden">{o.short}</span>
               </button>
             );
           })}
         </div>
         <SettingsButton />
       </div>
-    </div>
-  );
-}
-
-function strengthLabel(e: number) {
-  if (e >= 0.8) return { word: 'Very strong', n: 5 };
-  if (e >= 0.65) return { word: 'Strong', n: 4 };
-  if (e >= 0.5) return { word: 'Decent', n: 3 };
-  if (e >= 0.35) return { word: 'Weak', n: 2 };
-  return { word: 'Very weak', n: 1 };
-}
-
-const VERB: Record<string, string> = { f: 'Fold', k: 'Check', c: 'Call', t: 'Bet small', h: 'Bet half pot', p: 'Bet pot', a: 'All-in' };
-
-function CoachStrip() {
-  const state = usePlay((s) => s.state);
-  usePlay((s) => s.version);
-  const phase = usePlay((s) => s.phase);
-  const coach = usePlay((s) => s.settings.coach);
-  const equity = usePlay((s) => s.humanEquity);
-  const hint = usePlay((s) => s.hint);
-  const requestHint = usePlay((s) => s.requestHint);
-  if (!coach || !state) return null;
-  const [a, b] = state.holes(HUMAN);
-  const handName = state.board.length >= 3 ? describeHand(evaluate([a, b, ...state.board])) : a >> 2 === b >> 2 ? 'Pocket pair' : (a & 3) === (b & 3) ? 'Suited' : 'Offsuit';
-  const myTurn = phase === 'human';
-  const st = equity !== null ? strengthLabel(equity) : null;
-  const hintTop = hint
-    ? hint.codes
-        .map((c, i) => ({ c, p: hint.probs[i] }))
-        .filter((x) => x.p >= 0.12)
-        .sort((x, y) => y.p - x.p)
-    : [];
-  return (
-    <div className="flex min-h-[36px] flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11.5px] tracking-[0.06em] text-ink-400">
-      <span className="uppercase text-ink-100 sm:hidden">{handName}</span>
-      {st && (
-        <span className="flex items-center gap-2" title={`Win chance against a random hand: ${pct(equity!)}`}>
-          STRENGTH
-          <span className="flex border border-ink-500" aria-label={`${st.n} of 5`}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} className={`h-2 w-3.5 ${i > 1 ? 'border-l border-ink-950' : ''} ${i <= st.n ? 'bg-ink-100' : ''}`} />
-            ))}
-          </span>
-        </span>
-      )}
-      {hint && myTurn && (
-        <span className="flex flex-wrap items-center gap-3">
-          <span>SOLVER</span>
-          {hintTop.map((x) => (
-            <span key={x.c} className="uppercase text-gold">
-              {VERB[x.c]} <span className="tabular text-ink-300">{pct(x.p)}</span>
-            </span>
-          ))}
-        </span>
-      )}
-      {myTurn && !hint && (
-        <button onClick={requestHint} className="ml-auto min-h-[34px] border border-dashed border-ink-500 px-3 text-ink-100 hover:border-ink-100">
-          HINT <span className="kbd">H</span>
-        </button>
-      )}
     </div>
   );
 }

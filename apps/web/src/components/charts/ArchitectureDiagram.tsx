@@ -1,84 +1,114 @@
-/** System diagram: the GTO path (top) and the exploitation path (bottom) meet in the policy tilt. */
-export function ArchitectureDiagram() {
-  const box = (x: number, y: number, w: number, h: number, title: string, sub: string[], tone: 'gto' | 'exploit' | 'neutral' | 'gold') => {
-    const stroke = tone === 'gto' ? '#7fa6d6' : tone === 'exploit' ? '#e8743b' : tone === 'gold' ? '#e6e3dc' : '#5a5f66';
-    const fill = tone === 'gto' ? 'rgba(59,143,240,0.08)' : tone === 'exploit' ? 'rgba(232,95,42,0.08)' : tone === 'gold' ? 'rgba(251,191,36,0.08)' : '#15181b';
-    return (
-      <g>
-        <rect x={x} y={y} width={w} height={h} rx={3} fill={fill} stroke={stroke} strokeOpacity={0.7} strokeWidth={1.5} />
-        <text x={x + w / 2} y={y + 26} textAnchor="middle" fontSize="14" fontWeight="700" fill="#e6e3dc" fontFamily="Chivo, sans-serif">
-          {title}
-        </text>
-        {sub.map((s, i) => (
-          <text key={i} x={x + w / 2} y={y + 46 + i * 16} textAnchor="middle" fontSize="11.5" fill="#abafb5">
-            {s}
-          </text>
-        ))}
-      </g>
-    );
-  };
-  const arrow = (d: string, color: string, label?: { x: number; y: number; t: string }) => (
+const INK = '#e6e3dc';
+const DIM = '#8c929a';
+const LINE = '#5a5f66';
+const ACC = '#e8743b';
+const PAPER = '#15181b';
+const MONO = 'Chivo Mono, ui-monospace, monospace';
+const SANS = 'Chivo, ui-sans-serif, sans-serif';
+
+type Tone = 'gto' | 'exploit' | 'neutral' | 'mix';
+
+const strokeOf = (t: Tone) => (t === 'exploit' ? ACC : t === 'neutral' ? LINE : INK);
+
+/** A numbered balloon, as on a technical drawing. */
+function Balloon({ x, y, n, color = INK }: { x: number; y: number; n: number; color?: string }) {
+  return (
     <g>
-      <path d={d} fill="none" stroke={color} strokeWidth={2} markerEnd={`url(#ah-${color.slice(1)})`} />
+      <circle cx={x} cy={y} r={10} fill={PAPER} stroke={color} strokeWidth={1} />
+      <text x={x} y={y + 3.5} textAnchor="middle" fontSize="10" fill={color} fontFamily={MONO}>
+        {n}
+      </text>
+    </g>
+  );
+}
+
+function Box({ x, y, w, h, n, title, sub, tone }: { x: number; y: number; w: number; h: number; n: number; title: string; sub: string[]; tone: Tone }) {
+  const stroke = strokeOf(tone);
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} fill={PAPER} stroke={stroke} strokeWidth={tone === 'mix' ? 2 : 1.5} strokeDasharray={tone === 'neutral' ? '5 4' : undefined} />
+      <text x={x + 16} y={y + 28} fontSize="14.5" fontWeight="700" fill={INK} fontFamily={SANS}>
+        {title}
+      </text>
+      {sub.map((s, i) => (
+        <text key={i} x={x + 16} y={y + 50 + i * 16} fontSize="10.5" fill={DIM} fontFamily={MONO}>
+          {s}
+        </text>
+      ))}
+      <Balloon x={x + w} y={y} n={n} color={tone === 'exploit' ? ACC : INK} />
+    </g>
+  );
+}
+
+/** Orthogonal connector with an open arrowhead and an optional mono label. */
+function Wire({ d, color, label }: { d: string; color: string; label?: { x: number; y: number; t: string; anchor?: 'start' | 'middle' | 'end' } }) {
+  return (
+    <g>
+      <path d={d} fill="none" stroke={color} strokeWidth={1.5} markerEnd={`url(#tip-${color.slice(1)})`} />
       {label && (
-        <text x={label.x} y={label.y} textAnchor="middle" fontSize="11" fill={color} fontFamily="JetBrains Mono, monospace">
+        <text x={label.x} y={label.y} textAnchor={label.anchor ?? 'middle'} fontSize="10" fill={color} fontFamily={MONO} letterSpacing="0.5">
           {label.t}
         </text>
       )}
     </g>
   );
-  const colors = ['#7fa6d6', '#e8743b', '#e6e3dc', '#8c929a'];
+}
+
+/** System diagram: the balanced path (top) and the adaptive path (bottom) meet in the policy tilt. */
+export function ArchitectureDiagram() {
   return (
     <div className="overflow-x-auto">
-      <svg viewBox="0 0 1040 430" className="min-w-[760px]" role="img" aria-label="System architecture diagram">
+      <svg viewBox="0 0 1060 470" className="min-w-[760px]" role="img" aria-label="System architecture: game state is abstracted into buckets for the CFR blueprint; public actions feed an opponent model and a PPO policy network; both meet in a policy tilt gated by lambda that produces the action.">
         <defs>
-          {colors.map((c) => (
-            <marker key={c} id={`ah-${c.slice(1)}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10 z" fill={c} />
+          {[INK, ACC, DIM].map((c) => (
+            <marker key={c} id={`tip-${c.slice(1)}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M1,1 L9,5 L1,9" fill="none" stroke={c} strokeWidth="1.5" />
             </marker>
           ))}
         </defs>
 
-        <text x={20} y={30} fontSize="11" fill="#7fa6d6" fontWeight="700" letterSpacing="2">
-          GTO LAYER · OFFLINE MCCFR
+        {/* layer frames */}
+        <rect x={8} y={20} width={756} height={160} fill="none" stroke={LINE} strokeDasharray="2 5" />
+        <text x={20} y={14} fontSize="10.5" fill={INK} fontFamily={MONO} letterSpacing="1.5">
+          A · BALANCED LAYER · OFFLINE MCCFR
         </text>
-        <text x={20} y={252} fontSize="11" fill="#e8743b" fontWeight="700" letterSpacing="2">
-          EXPLOIT LAYER · ONLINE MODEL + OFFLINE PPO
+        <rect x={8} y={250} width={756} height={160} fill="none" stroke={LINE} strokeDasharray="2 5" />
+        <text x={20} y={244} fontSize="10.5" fill={ACC} fontFamily={MONO} letterSpacing="1.5">
+          B · ADAPTIVE LAYER · ONLINE MODEL + OFFLINE PPO
         </text>
 
-        {box(20, 46, 190, 92, 'Game state', ['hole cards · board', 'betting history'], 'neutral')}
-        {box(260, 46, 210, 92, 'Card abstraction', ['169 preflop classes', '32 E[HS²] buckets / street'], 'gto')}
-        {box(520, 46, 210, 92, 'CFR blueprint', ['external-sampling MCCFR', 'linear CFR + pruning'], 'gto')}
+        <Box x={24} y={52} w={196} h={96} n={1} title="Game state" sub={['hole cards · board', 'betting history']} tone="neutral" />
+        <Box x={276} y={52} w={210} h={96} n={2} title="Card abstraction" sub={['169 preflop classes', '32 E[HS²] buckets/street']} tone="gto" />
+        <Box x={540} y={52} w={210} h={96} n={3} title="CFR blueprint" sub={['external-sampling MCCFR', 'linear CFR + pruning']} tone="gto" />
 
-        {box(20, 268, 190, 92, 'Public actions', ['every hand played', '+ cards seen at showdown'], 'neutral')}
-        {box(260, 268, 210, 92, 'Opponent model', ['16 Beta-Bernoulli', 'posteriors (GTO prior)'], 'exploit')}
-        {box(520, 268, 210, 92, 'Policy network', ['MLP 36→64→64→4', 'trained with PPO'], 'exploit')}
+        <Box x={24} y={282} w={196} h={96} n={4} title="Public actions" sub={['every hand played', '+ showdown cards']} tone="neutral" />
+        <Box x={276} y={282} w={210} h={96} n={5} title="Opponent model" sub={['16 Beta-Bernoulli', 'posteriors · GTO prior']} tone="exploit" />
+        <Box x={540} y={282} w={210} h={96} n={6} title="Policy network" sub={['MLP 36→64→64→4', 'trained with PPO']} tone="exploit" />
 
-        {box(790, 150, 230, 112, 'Policy tilt', ['σ(a) ∝ σ_GTO(a) · exp(λ·Δ_g(a))', 'within-group mix kept', 'λ = 0 ⇒ exactly GTO'], 'gold')}
-        {box(840, 330, 130, 60, 'Action', [], 'neutral')}
+        <Box x={818} y={168} w={224} h={124} n={7} title="Policy tilt" sub={['σ ∝ σ_GTO · exp(λ·Δ)', 'mix within group kept', 'λ = 0 ⇒ exactly GTO']} tone="mix" />
+        <Box x={858} y={372} w={144} h={64} n={8} title="Action" sub={[]} tone="gto" />
 
-        {arrow('M210,92 L256,92', '#8c929a')}
-        {arrow('M470,92 L516,92', '#7fa6d6', { x: 493, y: 84, t: 'bucket' })}
-        {arrow('M730,92 C770,92 780,140 800,150', '#7fa6d6', { x: 776, y: 88, t: 'σ_GTO' })}
-        {arrow('M210,314 L256,314', '#8c929a')}
-        {arrow('M470,314 L516,314', '#e8743b', { x: 493, y: 306, t: 'x_opp' })}
-        {arrow('M730,314 C770,314 780,262 800,262', '#e8743b', { x: 772, y: 330, t: 'Δ (4 groups)' })}
-        {arrow('M625,138 L625,264', '#7fa6d6', { x: 690, y: 205, t: 'σ_GTO mass, state' })}
-        {arrow('M905,262 L905,326', '#e6e3dc')}
+        {/* exploit gate */}
+        <rect x={818} y={52} width={224} height={64} fill={PAPER} stroke={LINE} strokeDasharray="5 4" />
+        <text x={834} y={78} fontSize="13" fontWeight="700" fill={INK} fontFamily={SANS}>
+          Gate λ
+        </text>
+        <text x={834} y={98} fontSize="10.5" fill={DIM} fontFamily={MONO}>
+          mode switch · risk budget
+        </text>
 
-        <g>
-          <rect x={800} y={46} width={210} height={64} rx={3} fill="#15181b" stroke="#5a5f66" strokeDasharray="4 4" />
-          <text x={905} y={72} textAnchor="middle" fontSize="12.5" fontWeight="700" fill="#e6e3dc">
-            Exploit gate λ
-          </text>
-          <text x={905} y={92} textAnchor="middle" fontSize="11" fill="#abafb5">
-            user slider · risk budget
-          </text>
-        </g>
-        {arrow('M905,110 L905,146', '#8c929a')}
+        <Wire d="M220,100 L272,100" color={DIM} />
+        <Wire d="M486,100 L536,100" color={INK} label={{ x: 511, y: 92, t: 'bucket' }} />
+        <Wire d="M750,100 L790,100 L790,210 L814,210" color={INK} label={{ x: 798, y: 160, t: 'σ_GTO', anchor: 'start' }} />
+        <Wire d="M220,330 L272,330" color={DIM} />
+        <Wire d="M486,330 L536,330" color={ACC} label={{ x: 511, y: 322, t: 'x_opp' }} />
+        <Wire d="M750,330 L790,330 L790,250 L814,250" color={ACC} label={{ x: 798, y: 300, t: 'Δ ×4', anchor: 'start' }} />
+        <Wire d="M645,148 L645,278" color={INK} label={{ x: 655, y: 218, t: 'σ_GTO mass · state', anchor: 'start' }} />
+        <Wire d="M930,116 L930,164" color={DIM} />
+        <Wire d="M930,292 L930,368" color={INK} />
 
-        <text x={20} y={410} fontSize="11" fill="#8c929a">
-          Safety by construction: Bayesian shrinkage (no data ⇒ GTO features) · bounded Δ = 3·tanh(·) · L2 trust region to the blueprint · optional profit-based risk budget
+        <text x={8} y={458} fontSize="10" fill={DIM} fontFamily={MONO} letterSpacing="0.5">
+          SAFETY · no data ⇒ GTO features · Δ = 3·tanh(·) · L2 trust region to the blueprint · optional risk budget
         </text>
       </svg>
     </div>
