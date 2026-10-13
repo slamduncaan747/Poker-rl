@@ -8,14 +8,15 @@ import { FitBox } from '../ui/FitBox';
 import { BetChips, ChipStack } from './Chips';
 import { PlayingCard } from './PlayingCard';
 
-function useNarrow() {
-  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 720);
+function useViewport() {
+  const read = () => ({ w: typeof window !== 'undefined' ? window.innerWidth : 1440, h: typeof window !== 'undefined' ? window.innerHeight : 900 });
+  const [v, setV] = useState(read);
   useEffect(() => {
-    const on = () => setNarrow(window.innerWidth < 720);
+    const on = () => setV(read());
     window.addEventListener('resize', on);
     return () => window.removeEventListener('resize', on);
   }, []);
-  return narrow;
+  return v;
 }
 
 export function Table() {
@@ -27,7 +28,10 @@ export function Table() {
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const handNo = usePlay((s) => s.handNo);
 
-  const narrow = useNarrow();
+  const vp = useViewport();
+  const narrow = vp.w < 720;
+  // On desktop, keep the whole play area (header, table, controls) inside one screen.
+  const maxHeight = vp.w >= 1024 ? Math.max(420, vp.h - 330) : undefined;
   const W = narrow ? 600 : 960;
   const H = narrow ? 560 : 610;
   const inset = narrow ? 8 : 40;
@@ -36,7 +40,7 @@ export function Table() {
   const winners: Card[] = showdown && state ? winningCards(state) : [];
 
   return (
-    <FitBox width={W} height={H}>
+    <FitBox width={W} height={H} maxHeight={maxHeight}>
       <div className="relative" style={{ width: W, height: H }}>
         {/* table */}
         <div className={`table-rail absolute ${narrow ? 'rounded-[180px]' : 'rounded-[999px]'} p-[16px]`} style={{ left: inset, right: inset, top: 70, bottom: 70 }}>

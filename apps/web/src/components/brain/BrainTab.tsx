@@ -60,14 +60,14 @@ export function BrainTab() {
       )}
       <AnimatePresence mode="wait">
         <motion.div key={d.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-          <DecisionView d={d} revealed={revealed} />
+          <DecisionView d={d} revealed={revealed} fromLastHand={current.length === 0 && phase !== 'over' && phase !== 'idle'} />
         </motion.div>
       </AnimatePresence>
     </div>
   );
 }
 
-function DecisionView({ d, revealed }: { d: BotDecisionView; revealed: boolean }) {
+function DecisionView({ d, revealed, fromLastHand }: { d: BotDecisionView; revealed: boolean; fromLastHand: boolean }) {
   const { info, explanation: ex } = d;
   const [details, setDetails] = useState(false);
   const adapting = ex.tone === 'exploit';
@@ -76,7 +76,10 @@ function DecisionView({ d, revealed }: { d: BotDecisionView; revealed: boolean }
       <div className="flex items-center gap-3">
         <BotAvatar thinking={false} size={40} />
         <div>
-          <div className="eyebrow">{STREET_NAMES[info.street]} decision</div>
+          <div className="eyebrow">
+            {fromLastHand ? 'Last hand · ' : ''}
+            {STREET_NAMES[info.street]} decision
+          </div>
           <div className="font-display text-[26px] font-semibold leading-tight text-ink-100">{d.label}</div>
         </div>
       </div>

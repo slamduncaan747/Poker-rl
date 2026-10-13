@@ -26,7 +26,7 @@ export const STAT_PHRASE: Record<StatKey, string> = {
   raiseVsBet: 'raise when facing a bet',
   foldRiver: 'fold to a river bet',
   wtsd: 'go to showdown after the flop',
-  bluffShow: 'turn out to be bluffing when you bet late',
+  bluffShow: 'are bluffing when you bet the turn or river',
   lightCall: 'call the river with a weak hand',
 };
 
