@@ -1,4 +1,4 @@
-import { type AIAgent, type DecisionInfo, STAT_INFO, type StatKey } from '@poker-rl/engine';
+import { type AIAgent, type DecisionInfo, STAT_INFO, type StatKey, groupOf } from '@poker-rl/engine';
 import { pct } from './format';
 
 export interface Reason {
@@ -113,8 +113,18 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
         weight: w,
       };
     });
+  const chosenGroup = groupOf(info.codes[info.chosen]);
+  const ratio = info.groupBlueprint[chosenGroup] > 0 ? info.groupFinal[chosenGroup] / info.groupBlueprint[chosenGroup] : 1;
+  let headline: string;
+  if (chosenGroup === best) {
+    headline = up
+      ? `Against you, it makes this play ${ratio >= 1.8 ? 'much ' : ''}more often than balanced poker would.`
+      : `Against you, it makes this play less often than balanced poker would, but kept it in the mix this time.`;
+  } else {
+    headline = `Against you, it leans ${up ? 'toward' : 'away from'} ${GROUP_PHRASE[best]}. This time its hand and the mix still led to this play.`;
+  }
   return {
-    headline: `Leaning ${up ? 'toward' : 'away from'} ${GROUP_PHRASE[best]} compared with balanced play.`,
+    headline,
     tone: 'exploit',
     shiftGroup: best,
     shiftFrom: info.groupBlueprint[best],

@@ -45,9 +45,9 @@ export function ReadTab() {
     <div className="flex flex-col gap-5">
       <div className="rounded-2xl bg-gradient-to-b from-gold/[0.10] to-transparent p-5 ring-1 ring-gold/20">
         <div className="eyebrow">{early ? 'First impression' : 'The AI reads you as'}</div>
-        <div className="mt-1 font-display text-[32px] font-semibold leading-none text-gold-hi">{early && snap.hands < 3 ? 'Unknown' : top.name}</div>
+        <div className="mt-1 font-display text-[32px] font-semibold leading-none text-gold-hi">{snap.hands < 8 ? 'Still reading you' : top.name}</div>
         <p className="mt-3 text-[13.5px] leading-relaxed text-ink-300">
-          {snap.hands < 3 ? 'Play a few hands. The AI starts by assuming you play perfectly balanced poker and updates as it watches.' : ARCHETYPE_BLURB[top.id]}
+          {snap.hands < 8 ? `Early lean: ${top.name}. The AI starts by assuming you play perfectly balanced poker and firms up its read as it watches.` : ARCHETYPE_BLURB[top.id]}
         </p>
         <div className="mt-4 flex items-center gap-3 text-[11.5px] text-ink-400">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">

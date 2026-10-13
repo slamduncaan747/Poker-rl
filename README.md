@@ -12,7 +12,7 @@ A Monte Carlo CFR equilibrium blueprint, a Bayesian opponent model, and a PPO-tr
 
 ![Play](docs/screenshots/play.png)
 
-**[▶ Play the live demo](https://claude.ai/artifact/7VQytEBf34wyBsFZ3qEsbJ)** · or run it locally with `npm install && npm run dev`
+**[▶ Play the live demo](https://slamduncaan747.github.io/Poker-rl/)** · or run it locally with `npm install && npm run dev`
 
 ---
 
