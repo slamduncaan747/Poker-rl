@@ -1,0 +1,26 @@
+{
+  "name": "poker-rl",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Heads-up No-Limit Hold'em AI: CFR blueprint + reinforcement-learned opponent exploitation, with an interactive web demo.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/engine && tsc -p packages/training && tsc -p apps/web",
+    "train:blueprint": "tsx packages/training/src/trainBlueprint.ts",
+    "train:exploit": "tsx packages/training/src/trainExploit.ts",
+    "evaluate": "tsx packages/training/src/evaluate.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

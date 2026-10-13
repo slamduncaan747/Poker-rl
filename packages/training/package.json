@@ -1,0 +1,9 @@
+{
+  "name": "@poker-rl/training",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@poker-rl/engine": "*"
+  }
+}
