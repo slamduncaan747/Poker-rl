@@ -29,16 +29,13 @@ export function AboutPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 pb-16 lg:px-6">
-      <section className="relative mb-10 mt-4 overflow-hidden border border-ink-100 bg-ink-900 p-8 sm:p-12">
+      <section className="relative mb-10 mt-8 overflow-hidden border border-ink-100 bg-ink-900 p-8 sm:p-12">
         <div className="eyebrow">How it works</div>
-        <h1 className="mt-3 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+        <h1 className="mt-3 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
           Play the equilibrium. <span className="text-gradient">Then exploit the human.</span>
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-ink-300">
-          Poker RL is a heads-up no-limit hold'em AI in two layers: a game-theory-optimal blueprint that can't be beaten in the long run, and a
-          reinforcement-learned layer that reads its opponent and deviates from equilibrium exactly where the opponent leaks chips.
-        </p>
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <p className="mt-4 max-w-2xl text-lg text-ink-300">Two layers: an unbeatable equilibrium, and a learned layer that bends it toward your leaks.</p>
+        <div className="mt-8 grid grid-cols-2 border border-ink-600 sm:grid-cols-4">
           <Kpi label="CFR iterations" value={bp ? `${(bp.meta.iterations / 1e6).toFixed(1)}M` : '—'} />
           <Kpi label="Information sets" value={bp ? bp.meta.infosets.toLocaleString() : '—'} />
           <Kpi label="RL training hands" value={ex ? `${(ex.meta.hands / 1e6).toFixed(1)}M` : '—'} />
@@ -77,11 +74,11 @@ export function AboutPage() {
           </ul>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <div className="mb-1 text-[11px] text-ink-400">Average positive regret ↓</div>
+              <div className="mb-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400">Average positive regret ↓</div>
               <LineChart series={[{ name: 'avg regret', color: 'var(--color-gto)', points: cfrRegret }]} height={150} xLabel="iterations" formatX={(v) => `${(v / 1e6).toFixed(0)}M`} formatY={(v) => v.toFixed(3)} zeroLine={false} />
             </div>
             <div>
-              <div className="mb-1 text-[11px] text-ink-400">Average-strategy change per checkpoint ↓</div>
+              <div className="mb-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400">Average-strategy change per checkpoint ↓</div>
               <LineChart series={[{ name: 'Δσ', color: 'var(--color-gto)', points: cfrDelta }]} height={150} xLabel="iterations" formatX={(v) => `${(v / 1e6).toFixed(0)}M`} formatY={(v) => v.toFixed(3)} zeroLine={false} />
             </div>
           </div>
@@ -92,7 +89,7 @@ export function AboutPage() {
             The bot tracks 16 tendencies — VPIP, 3-bet, c-bet, fold-to-c-bet, aggression, river folds, showdown bluff rate and more — each as a
             Beta-Bernoulli posterior whose prior is centred on what the blueprint itself does.
           </p>
-          <div className="my-4 rounded-xl bg-black/30 p-4 text-center font-mono text-[13px] text-ink-200 ring-1 ring-white/5">
+          <div className="my-4 border border-dashed border-ink-500 p-4 text-center font-mono text-[13px] text-ink-200">
             p(stat | data) = Beta(α₀ + hits, β₀ + misses), &nbsp; α₀ / (α₀+β₀) = GTO frequency
           </div>
           <p>
@@ -111,7 +108,7 @@ export function AboutPage() {
             A small policy network takes 18 state features (street, position, hand strength, pot odds, SPR, the blueprint's own action mix) plus the
             18 opponent features, and outputs a bounded tilt Δ over four action groups. The final policy re-weights the blueprint:
           </p>
-          <div className="my-4 rounded-xl bg-black/30 p-4 text-center font-mono text-[13px] text-ink-200 ring-1 ring-white/5">
+          <div className="my-4 border border-dashed border-ink-500 p-4 text-center font-mono text-[13px] text-ink-200">
             P(g) ∝ (Q_g + ε·λ) · exp(λ · 3·tanh(f_θ(x))_g)
           </div>
           <ul>
@@ -132,11 +129,11 @@ export function AboutPage() {
           </ul>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <div className="mb-1 text-[11px] text-ink-400">Training reward (bb/100, smoothed)</div>
+              <div className="mb-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400">Training reward (bb/100, smoothed)</div>
               <LineChart series={[{ name: 'reward', color: 'var(--color-exploit)', points: rlReward }]} height={150} xLabel="training hands" formatX={(v) => `${(v / 1e6).toFixed(1)}M`} formatY={(v) => v.toFixed(0)} />
             </div>
             <div>
-              <div className="mb-1 text-[11px] text-ink-400">KL(policy ‖ blueprint) — how far it deviates</div>
+              <div className="mb-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400">KL(policy ‖ blueprint) — how far it deviates</div>
               <LineChart series={[{ name: 'KL', color: 'var(--color-exploit)', points: rlDev }]} height={150} xLabel="training hands" formatX={(v) => `${(v / 1e6).toFixed(1)}M`} formatY={(v) => v.toFixed(3)} zeroLine={false} />
             </div>
           </div>
@@ -158,17 +155,17 @@ export function AboutPage() {
       <Panel title="Fair play" className="mt-6">
         <div className="grid gap-6 text-[14px] leading-relaxed text-ink-300 md:grid-cols-3">
           <div>
-            <div className="mb-2 font-semibold text-ink-100">Same game, same odds</div>
+            <div className="mb-2 font-bold text-ink-100">Same game, same odds</div>
             Both players start every hand with 100 big blinds and the dealer button alternates, so blinds and position are shared equally. Cards are
             shuffled with the browser's cryptographic random number generator.
           </div>
           <div>
-            <div className="mb-2 font-semibold text-ink-100">The AI never peeks</div>
+            <div className="mb-2 font-bold text-ink-100">The AI never peeks</div>
             At the table it uses only its own two cards, the board dealt so far and the betting. It learns your cards only when you show them down. A
             unit test checks that its decisions are identical whatever your cards or the undealt board are.
           </div>
           <div>
-            <div className="mb-2 font-semibold text-ink-100">Training-only information stays in training</div>
+            <div className="mb-2 font-bold text-ink-100">Training-only information stays in training</div>
             The critic that sees both hands exists only in offline simulation to reduce variance; it is not part of the shipped bot. The "AI's thinking"
             panel also hides the bot's odds until the hand is over.
           </div>
@@ -178,18 +175,18 @@ export function AboutPage() {
       <Panel title="Engineering" className="mt-6">
         <div className="grid gap-6 text-[14px] text-ink-300 md:grid-cols-3">
           <div>
-            <div className="mb-2 font-semibold text-ink-100">One engine, three runtimes</div>
+            <div className="mb-2 font-bold text-ink-100">One engine, three runtimes</div>
             A dependency-free TypeScript engine (rules, evaluator, abstraction, CFR, neural net, PPO maths) runs in Node worker threads for
             training, in a Web Worker for the Arena, and on the main thread for live play.
           </div>
           <div>
-            <div className="mb-2 font-semibold text-ink-100">Fast & tested</div>
+            <div className="mb-2 font-bold text-ink-100">Fast & tested</div>
             Bit-mask 7-card evaluator (~10M evals/s), unit tests for rules, payouts, side-pot refunds, min-raise logic, action translation and hand
             ranking; zero-sum invariants fuzzed over thousands of random hands.
           </div>
           <div>
-            <div className="mb-2 font-semibold text-ink-100">Reproducible</div>
-            <code className="block whitespace-pre rounded-lg bg-black/30 p-3 font-mono text-[12px] text-ink-200 ring-1 ring-white/5">
+            <div className="mb-2 font-bold text-ink-100">Reproducible</div>
+            <code className="block whitespace-pre border border-ink-600 bg-ink-950 p-3 font-mono text-[12px] text-ink-200">
               {'npm run train:blueprint\nnpm run train:exploit\nnpm test && npm run dev'}
             </code>
           </div>
@@ -216,22 +213,23 @@ export function AboutPage() {
 
 function Kpi({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="glass-soft rounded-2xl px-4 py-3">
-      <div className="text-[10px] uppercase tracking-widest text-ink-400">{label}</div>
-      <div className={`tabular mt-1 font-display text-2xl font-bold ${accent ? 'text-win' : 'text-ink-100'}`}>{value}</div>
+    <div className="border-ink-600 px-4 py-3 [&:nth-child(n+2)]:border-l max-sm:[&:nth-child(3)]:border-l-0 max-sm:[&:nth-child(n+3)]:border-t">
+      <div className="font-mono text-[9.5px] uppercase tracking-[0.08em] text-ink-400">{label}</div>
+      <div className={`tabular mt-1 font-mono text-2xl font-bold ${accent ? 'text-gold' : 'text-ink-100'}`}>{value}</div>
     </div>
   );
 }
 
-function Section({ n, title, tone, children }: { n: string; title: string; tone: 'gto' | 'exploit' | 'gold'; children: ReactNode }) {
-  const c = tone === 'gto' ? 'from-gto/30 text-gto-hi' : tone === 'exploit' ? 'from-exploit/30 text-exploit-hi' : 'from-gold/30 text-gold-hi';
+function Section({ n, title, children }: { n: string; title: string; tone: 'gto' | 'exploit' | 'gold'; children: ReactNode }) {
   return (
-    <section className="glass rounded-2xl p-6">
+    <section className="glass p-6">
       <div className="mb-4 flex items-center gap-3">
-        <span className={`grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br to-transparent font-display text-lg font-bold ${c}`}>{n}</span>
-        <h2 className="font-display text-xl font-semibold text-ink-100">{title}</h2>
+        <span className="balloon" style={{ width: 26, height: 26, fontSize: 12 }}>
+          {n}
+        </span>
+        <h2 className="text-xl font-extrabold text-ink-100">{title}</h2>
       </div>
-      <div className="prose-sm flex flex-col gap-3 text-[14px] leading-relaxed text-ink-300 [&_b]:text-ink-100 [&_li]:ml-4 [&_li]:list-disc [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5">{children}</div>
+      <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink-300 [&_b]:text-ink-100 [&_li]:ml-4 [&_li]:list-[square] [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5">{children}</div>
     </section>
   );
 }

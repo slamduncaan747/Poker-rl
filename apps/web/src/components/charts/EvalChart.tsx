@@ -14,12 +14,12 @@ export function EvalChart({ rows }: { rows: EvalRow[] }) {
   const x = (v: number) => ((v - lo) / (hi - lo)) * 100;
   return (
     <div>
-      <div className="mb-3 flex gap-4 text-[11px] text-ink-300">
+      <div className="mb-3 flex gap-4 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-300">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-3 rounded-sm bg-gto" /> Balanced AI (GTO)
+          <span className="h-2 w-3  bg-ink-100" /> Balanced AI (GTO)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-3 rounded-sm bg-exploit" /> Adaptive AI (GTO + RL)
+          <span className="h-2 w-3  bg-exploit" /> Adaptive AI (GTO + RL)
         </span>
         <span className="text-ink-500">whiskers = 95% CI</span>
       </div>

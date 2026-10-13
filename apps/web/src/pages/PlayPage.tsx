@@ -35,7 +35,11 @@ export function PlayPage() {
         <ModeBar />
         <Table />
         <CoachStrip />
-        {!wide && <ActionBar />}
+        {!wide && (
+          <div className="sticky bottom-0 z-20 -mx-4 border-t border-ink-600 bg-ink-950 px-4 pt-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+            <ActionBar />
+          </div>
+        )}
       </div>
       <aside className="glass flex min-h-[520px] flex-col lg:sticky lg:top-[70px] lg:max-h-[calc(100vh-90px)]">
         <div role="tablist" aria-label="Panel" className="grid grid-cols-3 border-b border-ink-100 font-mono text-[11px] tracking-[0.08em]">

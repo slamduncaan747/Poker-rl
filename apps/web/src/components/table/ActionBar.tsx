@@ -126,8 +126,8 @@ export function ActionBar() {
                   style={{ ['--fill' as string]: `${fill}%` }}
                   onChange={(e) => setTo(Number(e.target.value))}
                 />
-                <div className="ruler" aria-hidden="true" />
-                <div className="grid grid-cols-6 font-mono text-[11px]">
+                <div className="ruler hidden sm:block" aria-hidden="true" />
+                <div className="hidden grid-cols-6 font-mono text-[11px] sm:grid">
                   {PRESETS.map((p, i) => (
                     <button
                       key={p.label}
@@ -141,17 +141,17 @@ export function ActionBar() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
               <button onClick={doFold} disabled={toCall === 0} title="Fold (F)" className="btn min-h-[48px] border border-ink-100 text-[15px] hover:bg-ink-800">
                 Fold <span className="kbd">F</span>
               </button>
               <button onClick={doCall} title="Check / call (C)" className="btn min-h-[48px] border border-ink-100 text-[15px] hover:bg-ink-800">
                 {toCallLabel} <span className="kbd">C</span>
               </button>
+              <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold min-h-[48px] text-[15px] lg:col-span-2 lg:min-h-[54px] lg:text-[17px]">
+                {raiseLabel} <span className="kbd">R</span>
+              </button>
             </div>
-            <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold min-h-[54px] text-[17px]">
-              {raiseLabel} <span className="kbd">R</span>
-            </button>
           </motion.div>
         ) : (
           <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2.5">

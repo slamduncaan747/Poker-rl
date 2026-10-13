@@ -19,6 +19,8 @@ interface Props {
   zeroLine?: boolean;
   logX?: boolean;
   empty?: string;
+  /** a dimension line between the last points of two series, labelled (e.g. the gap between two win-rate curves) */
+  bracket?: { a: number; b: number; label: string; sub?: string };
 }
 
 function niceTicks(min: number, max: number, count = 4): number[] {
@@ -33,7 +35,7 @@ function niceTicks(min: number, max: number, count = 4): number[] {
 }
 
 /** Responsive SVG line chart with a crosshair tooltip and legend. */
-export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) => v.toFixed(1), formatX = (v) => `${Math.round(v)}`, zeroLine = true, logX = false, empty = 'No data yet' }: Props) {
+export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) => v.toFixed(1), formatX = (v) => `${Math.round(v)}`, zeroLine = true, logX = false, empty = 'No data yet', bracket }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -46,7 +48,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
     return () => ro.disconnect();
   }, []);
   const H = height;
-  const pad = { l: 46, r: 14, t: 10, b: xLabel ? 34 : 22 };
+  const pad = { l: 46, r: bracket ? 78 : 14, t: 10, b: xLabel ? 34 : 22 };
 
   const all = series.flatMap((s) => s.points);
   const bands = series.flatMap((s) => s.band ?? []);
@@ -103,7 +105,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
 
   if (all.length === 0) {
     return (
-      <div ref={box} className="grid place-items-center rounded-xl border border-dashed border-white/10 text-xs text-ink-400" style={{ height }}>
+      <div ref={box} className="grid place-items-center border border-dashed border-ink-600 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-400" style={{ height }}>
         {empty}
       </div>
     );
@@ -114,10 +116,10 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
   return (
     <div ref={box} className="relative">
       {series.length > 1 && (
-        <div className="mb-1.5 flex flex-wrap gap-3 text-[11px] text-ink-300">
+        <div className="mb-2 flex flex-wrap gap-4 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-300">
           {series.map((s) => (
-            <span key={s.name} className="flex items-center gap-1.5">
-              <span className="inline-block h-[3px] w-4 rounded-full" style={{ background: s.color, opacity: s.dashed ? 0.7 : 1 }} />
+            <span key={s.name} className="flex items-center gap-2">
+              <span className="inline-block w-5" style={{ borderTop: `2px ${s.dashed ? 'dashed' : 'solid'} ${s.color}` }} />
               {s.name}
             </span>
           ))}
@@ -126,15 +128,15 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
       <svg ref={ref} viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block w-full touch-none select-none" onPointerMove={onMove} onPointerLeave={() => setHover(null)} role="img" aria-label={`${yLabel ?? ''} chart`}>
         {yTicks.map((t) => (
           <g key={t}>
-            <line x1={pad.l} x2={W - pad.r} y1={sy(t)} y2={sy(t)} stroke="rgba(148,161,184,0.10)" />
-            <text x={pad.l - 6} y={sy(t) + 3.5} textAnchor="end" fontSize="10" fill="#8c929a" className="tabular">
+            <line x1={pad.l} x2={W - pad.r} y1={sy(t)} y2={sy(t)} stroke="#2a2e33" />
+            <text x={pad.l - 6} y={sy(t) + 3.5} textAnchor="end" fontSize="10" fill="#8c929a" fontFamily="var(--font-mono)" className="tabular">
               {formatY(t)}
             </text>
           </g>
         ))}
-        {zeroLine && y0 < 0 && y1 > 0 && <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="rgba(196,205,219,0.35)" />}
-        {xTicks.map((t) => (
-          <text key={t} x={sx(logX ? 10 ** t : t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#8c929a" className="tabular">
+        {zeroLine && y0 < 0 && y1 > 0 && <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="#5a5f66" />}
+        {xTicks.filter((t, i, a) => i === 0 || formatX(logX ? a[i - 1] : a[i - 1]) !== formatX(logX ? t : t)).map((t) => (
+          <text key={t} x={sx(logX ? 10 ** t : t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#8c929a" fontFamily="var(--font-mono)" className="tabular">
             {formatX(logX ? t : t)}
           </text>
         ))}
@@ -178,9 +180,41 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
             strokeLinecap="round"
           />
         ))}
+        {bracket && series[bracket.a]?.points.length > 1 && series[bracket.b]?.points.length > 1 && (() => {
+          const pa = series[bracket.a].points[series[bracket.a].points.length - 1];
+          const pb = series[bracket.b].points[series[bracket.b].points.length - 1];
+          const xe = sx(Math.max(pa[0], pb[0]));
+          const ya = sy(pa[1]);
+          const yb = sy(pb[1]);
+          const xl = xe + 22;
+          const up = ya < yb ? 1 : -1;
+          return (
+            <g stroke="var(--color-ink-100)" strokeWidth={1} fill="none">
+              <circle cx={sx(pa[0])} cy={ya} r={3.5} fill={series[bracket.a].color} stroke="none" />
+              <circle cx={sx(pb[0])} cy={yb} r={3.5} fill={series[bracket.b].color} stroke="none" />
+              <line x1={xe + 6} y1={ya} x2={xl + 6} y2={ya} />
+              <line x1={xe + 6} y1={yb} x2={xl + 6} y2={yb} />
+              {Math.abs(ya - yb) > 14 && (
+                <>
+                  <line x1={xl} y1={ya} x2={xl} y2={yb} />
+                  <polyline points={`${xl - 3.5},${ya + 7 * up} ${xl},${ya} ${xl + 3.5},${ya + 7 * up}`} />
+                  <polyline points={`${xl - 3.5},${yb - 7 * up} ${xl},${yb} ${xl + 3.5},${yb - 7 * up}`} />
+                </>
+              )}
+              <text x={xl + 8} y={(ya + yb) / 2 + 2} fill="var(--color-gold)" stroke="none" fontSize="14" fontWeight="700" fontFamily="var(--font-mono)">
+                {bracket.label}
+              </text>
+              {bracket.sub && (
+                <text x={xl + 8} y={(ya + yb) / 2 + 16} fill="#8c929a" stroke="none" fontSize="9.5" fontFamily="var(--font-mono)">
+                  {bracket.sub}
+                </text>
+              )}
+            </g>
+          );
+        })()}
         {hx !== null && hx !== undefined && (
           <g>
-            <line x1={sx(hx)} x2={sx(hx)} y1={pad.t} y2={H - pad.b} stroke="rgba(230,235,242,0.3)" />
+            <line x1={sx(hx)} x2={sx(hx)} y1={pad.t} y2={H - pad.b} stroke="#5a5f66" strokeDasharray="3 3" />
             {series.map((s) => {
               const p = s.points.find(([x]) => x === hx);
               return p ? <circle key={s.name} cx={sx(p[0])} cy={sy(p[1])} r={4.5} fill={s.color} stroke="#15181b" strokeWidth={2} /> : null;
@@ -190,7 +224,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
       </svg>
       {hx !== null && hx !== undefined && (
         <div
-          className="glass pointer-events-none absolute top-6 z-10 min-w-[120px] rounded-lg px-2.5 py-1.5 text-[11px]"
+          className="glass pointer-events-none absolute top-6 z-10 min-w-[120px] px-2.5 py-1.5 font-mono text-[11px]"
           style={{ left: `${Math.min(70, Math.max(2, (sx(hx) / W) * 100))}%` }}
         >
           <div className="mb-0.5 text-ink-400">
@@ -201,7 +235,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
             return p ? (
               <div key={s.name} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-1.5 text-ink-300">
-                  <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
+                  <span className="h-2 w-2" style={{ background: s.color }} />
                   {s.name}
                 </span>
                 <span className="tabular font-mono text-ink-100">{formatY(p[1])}</span>
