@@ -35,7 +35,7 @@ Run it locally with `npm install && npm run dev`.
 
 ## The demo
 
-- **Play** — heads-up against **Otto** at $1/$2 with $200 stacks. Hover Otto to see why it made its last play; its hand unlocks when the hand ends. After each hand, every decision you made gets a chess-style mark (**Brilliant**, **Best**, **Good**, **Inaccuracy**, **Mistake**, **Blunder**); hover one to see what the solver plays.
+- **Play** — heads-up against **Otto** at $1/$2 with $200 stacks. Hover Otto to see why it made its last play; its hand unlocks when the hand ends. After each hand, every decision you made gets a chess-style mark (**Brilliant**, **Best**, **Good**, **Inaccuracy**, **Mistake**, **Blunder**); hover one to see what the solver plays. Chips carry over from hand to hand: take all of Otto's to win the match, run out and you lose it — either side can rebuy and play on, and the record (net, matches won and lost, rebuys) is saved in your browser until you reset it.
 - **Your style** — where you sit among player types, the habits Otto is using against you, and a **stress test**: a clone of your style is fitted from Otto's read and played against both bots in a Web Worker to show how exploitable you are. *See everything Otto knows about you* opens the full profile and a hand-by-hand log of how each hand moved its estimates. No hands yet? *Preview with a sample player*.
 - **Arena** — Otto and the balanced AI play the same deals against a chosen player type; the gap between the curves is what adapting is worth.
 - **How it works** — a research write-up: method, training statistics, and the experiments below.
