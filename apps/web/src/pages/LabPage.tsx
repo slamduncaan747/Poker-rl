@@ -16,13 +16,13 @@ interface PreflopScenario {
 }
 
 const PREFLOP: PreflopScenario[] = [
-  { id: 'open', label: 'Button open', pos: 'B', hist: '', desc: 'Button (small blind) acts first preflop: fold, limp, or open-raise to 2bb / 3bb / all-in.' },
-  { id: 'vs2', label: 'BB vs 2bb open', pos: 'O', hist: 'h', desc: 'Big blind facing a min-raise to 2bb.' },
-  { id: 'vs3', label: 'BB vs 3bb open', pos: 'O', hist: 'p', desc: 'Big blind facing a pot-sized open to 3bb.' },
-  { id: 'limp', label: 'BB vs limp', pos: 'O', hist: 'c', desc: 'Button completed the blind; big blind can check or raise.' },
-  { id: '3bet', label: 'Button vs 3-bet', pos: 'B', hist: 'hp', desc: 'Button opened to 2bb and the big blind re-raised pot-size (to 6bb).' },
-  { id: '4bet', label: 'BB vs 4-bet', pos: 'O', hist: 'hpp', desc: 'Big blind 3-bet and the button 4-bet.' },
-  { id: 'shove', label: 'BB vs shove', pos: 'O', hist: 'a', desc: 'Button moved all-in for 100bb. Call or fold.' },
+  { id: 'open', label: 'Button open', pos: 'B', hist: '', desc: 'Button (small blind) acts first preflop: fold, limp, or open-raise to $4 / $6 / all-in.' },
+  { id: 'vs2', label: 'Big blind vs $4 open', pos: 'O', hist: 'h', desc: 'Big blind facing a min-raise to $4.' },
+  { id: 'vs3', label: 'Big blind vs $6 open', pos: 'O', hist: 'p', desc: 'Big blind facing a pot-sized open to $6.' },
+  { id: 'limp', label: 'Big blind vs limp', pos: 'O', hist: 'c', desc: 'Button completed the blind; big blind can check or raise.' },
+  { id: '3bet', label: 'Button vs 3-bet', pos: 'B', hist: 'hp', desc: 'Button opened to $4 and the big blind re-raised pot-size (to $12).' },
+  { id: '4bet', label: 'Big blind vs 4-bet', pos: 'O', hist: 'hpp', desc: 'Big blind 3-bet and the button 4-bet.' },
+  { id: 'shove', label: 'Big blind vs shove', pos: 'O', hist: 'a', desc: 'Button moved all-in for $200. Call or fold.' },
 ];
 
 function strategyFor(bp: Blueprint, key: string) {

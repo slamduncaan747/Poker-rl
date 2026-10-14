@@ -49,7 +49,7 @@ export interface Explanation {
 export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
   if (info.lambda <= 0 || !agent.actor) {
     return {
-      headline: 'Playing the balanced, unexploitable strategy.',
+      headline: "I'm playing balanced poker.",
       tone: 'gto',
       shiftGroup: null,
       shiftFrom: 0,
@@ -71,8 +71,8 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
     return {
       headline:
         agent.model.hands < 8
-          ? 'Still getting to know you, so it plays the balanced strategy.'
-          : 'No reliable edge against you in this spot, so it stays balanced.',
+          ? "Still getting to know you, so I'm playing balanced."
+          : 'No edge against you here, so I stay balanced.',
       tone: 'neutral',
       shiftGroup: null,
       shiftFrom: 0,
@@ -109,7 +109,7 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
         stat: k,
         label: info2.label,
         detail: `${obs} vs GTO ${pct(s.baseline)}`,
-        sentence: `You ${STAT_PHRASE[k]} ${subject} — a balanced player: ${pct(s.baseline)}.`,
+        sentence: `You ${STAT_PHRASE[k]} ${subject} — balanced: ${pct(s.baseline)}.`,
         weight: w,
       };
     });
@@ -118,10 +118,10 @@ export function explain(info: DecisionInfo, agent: AIAgent): Explanation {
   let headline: string;
   if (chosenGroup === best) {
     headline = up
-      ? `Against you, it makes this play ${ratio >= 1.8 ? 'much ' : ''}more often than balanced poker would.`
-      : `Against you, it makes this play less often than balanced poker would, but kept it in the mix this time.`;
+      ? `Against you, I make this play ${ratio >= 1.8 ? 'much ' : ''}more often than balanced poker would.`
+      : `Against you, I make this play less often than balanced poker would, but kept it in the mix.`;
   } else {
-    headline = `Against you, it leans ${up ? 'toward' : 'away from'} ${GROUP_PHRASE[best]}. This time its hand and the mix still led to this play.`;
+    headline = `Against you, I lean ${up ? 'toward' : 'away from'} ${GROUP_PHRASE[best]}, but my hand still led here.`;
   }
   return {
     headline,

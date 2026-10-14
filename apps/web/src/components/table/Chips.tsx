@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { bb } from '../../lib/format';
+import { money } from '../../lib/format';
 
 /** One drawn chip: an outlined ellipse with a hairline rim. */
 export function Chip({ color = 'var(--color-ink-100)', size = 22 }: { color?: string; size?: number }) {
@@ -54,24 +54,24 @@ export function ChipStack({
       </div>
       {label && (
         <span className="tabular font-mono text-[12px] font-medium tracking-wide" style={{ color: color ?? 'var(--color-ink-100)' }}>
-          {bb(amount)}
+          {money(amount)}
         </span>
       )}
     </div>
   );
 }
 
-/** A street bet in front of a seat that animates in and out. */
-export function BetChips({ amount, id, color, exitTo }: { amount: number; id: string; color?: string; exitTo?: { x: number; y: number } }) {
+/** A street bet: slides out from the seat (`from`) and, at the end of the street, into the pot (`exitTo`). */
+export function BetChips({ amount, id, color, from, exitTo }: { amount: number; id: string; color?: string; from?: { x: number; y: number }; exitTo?: { x: number; y: number } }) {
   return (
     <AnimatePresence>
       {amount > 0 && (
         <motion.div
           key={id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={exitTo ? { x: exitTo.x, y: exitTo.y, opacity: 0, transition: { duration: 0.45, ease: 'easeInOut' } } : { opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+          initial={from ? { x: from.x, y: from.y, opacity: 0, scale: 0.85 } : { opacity: 0, y: 8 }}
+          animate={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+          exit={exitTo ? { x: exitTo.x, y: exitTo.y, opacity: 0, scale: 0.9, transition: { duration: 0.42, ease: [0.4, 0, 0.2, 1] } } : { opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 26 }}
         >
           <ChipStack amount={amount} size={20} color={color} />
         </motion.div>

@@ -1,15 +1,16 @@
 import type { HUNLState } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
-import { bb } from '../../lib/format';
-import { NASH, quip } from '../../lib/nash';
-import { BOT, usePlay } from '../../lib/store';
-import { DecisionView } from '../brain/BrainTab';
+import { money } from '../../lib/format';
+import { OTTO, quip } from '../../lib/otto';
+import { BOT, type BotDecisionView, usePlay } from '../../lib/store';
+import { GROUP_COLORS } from './ActionBar';
+import { Count } from '../ui/Count';
 
 export type Mood = 'idle' | 'thinking' | 'reading' | 'won' | 'lost';
 
-/** Nash's face: a drawn square head whose eyes and mouth change with its mood. */
-export function NashFace({ mood, size = 44 }: { mood: Mood; size?: number }) {
+/** Otto's face: a drawn square head whose eyes and mouth change with its mood. */
+export function OttoFace({ mood, size = 44 }: { mood: Mood; size?: number }) {
   const eye = mood === 'reading' ? 'var(--color-gold)' : 'var(--color-ink-100)';
   return (
     <svg width={size} height={size} viewBox="0 0 44 44" aria-hidden="true" className="shrink-0">
@@ -33,15 +34,14 @@ export function NashFace({ mood, size = 44 }: { mood: Mood; size?: number }) {
   );
 }
 
-/** Nash's seat: face, name and stack, a speech bubble after it acts, and its reasoning on hover. */
-export function NashSeat({ state, stack, toAct, width, left }: { state: HUNLState | null; stack: number; toAct: boolean; width: number; left?: number }) {
+/** Otto's seat: face, name and stack, a speech bubble after it acts, and its reasoning on hover. */
+export function OttoSeat({ state, stack, toAct, won, width, left }: { state: HUNLState | null; stack: number; toAct: boolean; won: boolean; width: number; left?: number }) {
   const phase = usePlay((s) => s.phase);
   const decisions = usePlay((s) => s.botDecisions);
   const bubble = usePlay((s) => s.bubble);
   const bot = usePlay((s) => s.bot);
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const handNo = usePlay((s) => s.handNo);
-  const lambda = usePlay((s) => s.settings.lambda);
   const [open, setOpen] = useState(false);
   const d = decisions[decisions.length - 1];
   const settled = phase === 'over' && last?.id === handNo;
@@ -51,7 +51,6 @@ export function NashSeat({ state, stack, toAct, width, left }: { state: HUNLStat
   const line = phase === 'bot' ? '…' : settled ? (last.net < 0 ? 'Good hand for me.' : last.net > 0 ? 'Nicely played.' : 'Split it.') : quip(d, snap);
   const action = !settled && bubble && bubble.seat === BOT ? bubble.text : null;
   const allIn = !!state && state.stacks[BOT] === 0 && !state.terminal;
-  const isButton = state?.button === BOT;
 
   return (
     <div className={`absolute top-[4px] z-30 ${left === undefined ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, left }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
@@ -61,19 +60,17 @@ export function NashSeat({ state, stack, toAct, width, left }: { state: HUNLStat
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         aria-expanded={open}
-        aria-label={`${NASH}'s reasoning`}
-        className={`flex h-[52px] w-full items-stretch border bg-ink-900 text-left ${toAct ? 'border-ink-100' : 'border-ink-600'}`}
+        aria-label={`${OTTO}'s reasoning`}
+        className={`flex h-[52px] w-full items-stretch border bg-ink-900 text-left ${won ? 'border-gold' : toAct ? 'border-ink-100' : 'border-ink-600'}`}
       >
         <span className="grid w-[52px] place-items-center border-r border-ink-600">
-          <NashFace mood={mood} size={38} />
+          <OttoFace mood={mood} size={38} />
         </span>
-        <span className="flex min-w-0 flex-1 items-center gap-2 px-3">
-          <strong className="font-bold">{NASH}</strong>
-          {isButton && <span className="font-mono text-[10px] text-ink-400">D</span>}
-          <span className={`font-mono text-[10px] tracking-[0.08em] ${lambda > 0 ? 'text-gold' : 'text-ink-400'}`}>{lambda > 0 ? 'ADAPTIVE' : 'BALANCED'}</span>
+        <span className="flex min-w-0 flex-1 items-center px-3">
+          <strong className="font-bold">{OTTO}</strong>
         </span>
-        <span className="tabular flex min-w-[80px] items-center justify-end border-l border-ink-600 px-3 font-mono text-[19px] font-bold text-ink-300">
-          {allIn ? 'ALL-IN' : bb(stack, stack % 100 === 0 ? 0 : 1)}
+        <span className="tabular flex min-w-[96px] items-center justify-end px-3 font-mono text-[19px] font-bold text-ink-300">
+          {allIn ? 'ALL-IN' : <Count value={stack} format={money} delay={won ? 1.1 : 0} />}
         </span>
       </button>
 
@@ -101,12 +98,64 @@ export function NashSeat({ state, stack, toAct, width, left }: { state: HUNLStat
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="glass absolute left-0 top-full z-40 mt-2 flex w-[340px] flex-col gap-3 p-4 text-left"
+            className="glass absolute left-0 top-full z-40 mt-2 flex w-[320px] flex-col gap-3 p-4 text-left"
           >
-            <DecisionView d={d} revealed={phase === 'over' || phase === 'idle'} fromLastHand={false} compact />
+            <Thinking d={d} revealed={phase === 'over' || phase === 'idle'} />
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+const STRENGTH = ['very weak', 'weak', 'medium', 'strong', 'very strong'];
+const GROUP_WORDS = ['Fold', 'Check / call', 'Small bet', 'Big bet'];
+
+/** Otto's reasoning for its last decision; its hand strength and mix unlock after the hand. */
+function Thinking({ d, revealed }: { d: BotDecisionView; revealed: boolean }) {
+  const { info, explanation: ex } = d;
+  const strength = STRENGTH[Math.min(4, Math.floor(info.strength * 5))];
+  return (
+    <>
+      <div>
+        <div className="text-[19px] font-extrabold leading-tight">{d.label}</div>
+        <p className="mt-1 text-[14px] leading-snug text-ink-200">{ex.headline}</p>
+        {ex.reasons.slice(0, 1).map((r) => (
+          <p key={r.stat} className="mt-2 border-l-2 border-gold pl-3 text-[13px] leading-snug text-ink-300">
+            {r.sentence}
+          </p>
+        ))}
+      </div>
+      {revealed ? (
+        <div className="flex flex-col gap-2">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-400">
+            My hand was <span className="text-ink-100">{strength}</span>
+          </div>
+          <Mix label="Balanced" values={info.groupBlueprint} />
+          {info.lambda > 0 && <Mix label="Vs you" values={info.groupFinal} />}
+          <div className="flex flex-wrap gap-x-3 text-[11px] text-ink-400">
+            {GROUP_WORDS.map((g, i) => (
+              <span key={g} className="flex items-center gap-1.5">
+                <span className="h-2 w-2" style={{ background: GROUP_COLORS[i] }} />
+                {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="font-mono text-[10.5px] tracking-[0.08em] text-ink-500">MY CARDS SHOW AFTER THE HAND</div>
+      )}
+    </>
+  );
+}
+
+function Mix({ label, values }: { label: string; values: number[] }) {
+  return (
+    <div className="grid grid-cols-[60px_1fr] items-center gap-2">
+      <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-400">{label}</span>
+      <div className="flex h-2 gap-[2px]">
+        {values.map((v, i) => (v > 0.004 ? <span key={i} style={{ width: `${v * 100}%`, background: GROUP_COLORS[i] }} /> : null))}
+      </div>
     </div>
   );
 }

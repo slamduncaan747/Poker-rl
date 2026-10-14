@@ -12,3 +12,4 @@ export * from './archetypes';
 export * from './agents';
 export * from './match';
 export * from './coach';
+export * from './clone';

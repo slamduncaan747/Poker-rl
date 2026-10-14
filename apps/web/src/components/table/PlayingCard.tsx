@@ -1,5 +1,6 @@
 import { type Card, RANKS, rankOf, suitOf } from '@poker-rl/engine';
 import { motion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import { usePlay } from '../../lib/store';
 
 const SUIT_GLYPH = ['♣', '♦', '♥', '♠'];
@@ -9,7 +10,7 @@ const TWO_COLOR = ['#464c55', '#b83b32', '#b83b32', '#464c55'];
 
 export type CardSize = 'xs' | 'sm' | 'md' | 'lg';
 
-const DIMS: Record<CardSize, { w: number; h: number; rank: number; suit: number; corner: number }> = {
+export const DIMS: Record<CardSize, { w: number; h: number; rank: number; suit: number; corner: number }> = {
   xs: { w: 30, h: 42, rank: 15, suit: 10, corner: 3 },
   sm: { w: 44, h: 62, rank: 22, suit: 13, corner: 4 },
   md: { w: 62, h: 88, rank: 32, suit: 17, corner: 5 },
@@ -41,29 +42,42 @@ interface Props {
   highlight?: boolean;
   dim?: boolean;
   delay?: number;
+  /** where the card is dealt from, relative to where it lands */
   from?: { x: number; y: number };
   className?: string;
 }
 
 /**
  * A minimal card: a solid suit-coloured face with one large rank and its suit
- * underneath. Flips in 3D between the hatched back and the face.
+ * underneath. It is dealt face down from `from`, lands, then turns over.
  */
 export function PlayingCard({ card, faceUp = true, size = 'md', highlight, dim, delay = 0, from, className = '' }: Props) {
   const fill = useSuitFill();
   const d = DIMS[size];
   const showFace = faceUp && card !== undefined;
+  // the first flip waits for the card to land; later flips (a showdown) happen at once
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+  }, []);
+  const flipDelay = mounted.current ? 0 : delay + (from ? 0.32 : 0.12);
   return (
     <motion.div
       className={`card-3d relative shrink-0 ${className}`}
       style={{ width: d.w, height: d.h }}
       role="img"
       aria-label={showFace ? cardName(card) : 'Face-down card'}
-      initial={from ? { x: from.x, y: from.y, opacity: 0, scale: 0.9 } : { y: -10, opacity: 0, scale: 0.94 }}
-      animate={{ x: 0, y: 0, opacity: dim ? 0.32 : 1, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 280, damping: 26, delay }}
+      initial={from ? { x: from.x, y: from.y, rotate: -12, opacity: 0, scale: 0.8 } : { y: -10, opacity: 0, scale: 0.94 }}
+      animate={{ x: 0, y: 0, rotate: 0, opacity: dim ? 0.32 : 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      transition={{ type: 'spring', stiffness: 210, damping: 24, delay, opacity: { duration: 0.15, delay } }}
     >
-      <div className="card-inner absolute inset-0" style={{ transform: showFace ? 'rotateY(0deg)' : 'rotateY(180deg)', transitionDelay: `${delay}s` }}>
+      <motion.div
+        className="card-inner absolute inset-0"
+        initial={{ rotateY: 180 }}
+        animate={{ rotateY: showFace ? 0 : 180 }}
+        transition={{ duration: 0.42, ease: [0.2, 0.8, 0.2, 1], delay: flipDelay }}
+      >
         <div
           className="card-face absolute inset-0 flex flex-col items-center justify-center text-white"
           style={{
@@ -87,8 +101,20 @@ export function PlayingCard({ card, faceUp = true, size = 'md', highlight, dim, 
           )}
         </div>
         <div className="card-back card-back-pattern absolute inset-0" style={{ borderRadius: d.corner }} />
-      </div>
+      </motion.div>
     </motion.div>
+  );
+}
+
+/** A face-down deck: a few offset card backs. */
+export function Deck({ size = 'md' }: { size?: CardSize }) {
+  const d = DIMS[size];
+  return (
+    <div className="relative" style={{ width: d.w + 4, height: d.h + 4 }} aria-hidden="true">
+      {[2, 1, 0].map((k) => (
+        <div key={k} className="card-back-pattern absolute" style={{ width: d.w, height: d.h, left: k * 2, top: 4 - k * 2, borderRadius: d.corner }} />
+      ))}
+    </div>
   );
 }
 

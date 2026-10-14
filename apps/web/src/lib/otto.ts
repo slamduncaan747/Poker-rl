@@ -2,7 +2,7 @@ import type { OpponentSnapshot, StatKey } from '@poker-rl/engine';
 import type { BotDecisionView } from './store';
 
 /** The AI's name at the table. */
-export const NASH = 'Nash';
+export const OTTO = 'Otto';
 
 /** Each tracked habit, phrased as something you do. */
 export const HABIT: Record<StatKey, string> = {
@@ -24,7 +24,7 @@ export const HABIT: Record<StatKey, string> = {
   lightCall: 'Call light on the river',
 };
 
-/** What Nash says about a habit that is clearly above / below normal. */
+/** What Otto says about a habit that is clearly above / below normal. */
 const QUIP: Record<StatKey, { high: string; low: string }> = {
   vpip: { high: 'You play every hand.', low: "You're so tight." },
   pfr: { high: 'You raise a lot.', low: 'You never raise.' },
@@ -44,7 +44,7 @@ const QUIP: Record<StatKey, { high: string; low: string }> = {
   lightCall: { high: 'You call light.', low: 'You only call with it.' },
 };
 
-/** Nash's one-line remark after a decision. */
+/** Otto's one-line remark after a decision. */
 export function quip(d: BotDecisionView | undefined, snap: OpponentSnapshot | null): string {
   if (!d) return '';
   if (d.explanation.tone !== 'exploit') return snap && snap.hands < 10 ? 'Still learning you.' : 'Playing it straight.';
@@ -54,9 +54,9 @@ export function quip(d: BotDecisionView | undefined, snap: OpponentSnapshot | nu
   return "I've got a read on you.";
 }
 
-/** Rewrite a leak's advice in Nash's voice. */
-export function nashify(text: string): string {
-  return text.replace(/\bthe bot\b/g, NASH).replace(/\bThe bot\b/g, NASH);
+/** Rewrite a leak's advice in Otto's voice. */
+export function voice(text: string): string {
+  return text.replace(/\bthe bot\b/g, OTTO).replace(/\bThe bot\b/g, OTTO);
 }
 
 export type Mark = 'Brilliant' | 'Best' | 'Good' | 'Inaccuracy' | 'Mistake' | 'Blunder';
@@ -71,11 +71,24 @@ export function markOf(g: { label: string; code: string; prob: number }): Mark {
   return g.label as Mark;
 }
 
-export const MARKS: Record<Mark, { sym: string; text: string; good: boolean }> = {
-  Brilliant: { sym: '!!', text: 'Brilliant', good: true },
-  Best: { sym: '★', text: 'Best', good: true },
-  Good: { sym: '✓', text: 'Good', good: true },
-  Inaccuracy: { sym: '?!', text: 'Inaccuracy', good: false },
-  Mistake: { sym: '?', text: 'Mistake', good: false },
-  Blunder: { sym: '??', text: 'Blunder', good: false },
+/** Chess-style marks, coloured from brilliant (teal) through green and yellow to blunder (red). */
+export const MARKS: Record<Mark, { sym: string; text: string; good: boolean; color: string }> = {
+  Brilliant: { sym: '!!', text: 'Brilliant', good: true, color: '#3cc2ae' },
+  Best: { sym: '★', text: 'Best', good: true, color: '#7cc160' },
+  Good: { sym: '✓', text: 'Good', good: true, color: '#a6b892' },
+  Inaccuracy: { sym: '?!', text: 'Inaccuracy', good: false, color: '#e6bf45' },
+  Mistake: { sym: '?', text: 'Mistake', good: false, color: '#ee8d3e' },
+  Blunder: { sym: '??', text: 'Blunder', good: false, color: '#e5513f' },
+};
+
+/** How each reference player type is named for you, short names for the map, and what Otto does about it. */
+export const STYLES: Record<string, { name: string; short: string; blurb: string }> = {
+  gto: { name: 'Balanced player', short: 'Balanced', blurb: "You're hard to read, so Otto stays balanced." },
+  station: { name: 'Calling station', short: 'Station', blurb: 'You call too much. Otto bets its good hands bigger and stops bluffing you.' },
+  maniac: { name: 'Maniac', short: 'Maniac', blurb: 'You bet and raise relentlessly. Otto calls you down lighter and traps.' },
+  nit: { name: 'Rock', short: 'Rock', blurb: 'You play few hands and fold under pressure. Otto steals and bluffs more.' },
+  tag: { name: 'Tight-aggressive regular', short: 'TAG', blurb: 'Solid and aggressive. Otto only makes small adjustments.' },
+  lag: { name: 'Loose-aggressive player', short: 'LAG', blurb: 'Loose and aggressive. Otto calls and re-raises wider.' },
+  scared: { name: 'Scared player', short: 'Scared', blurb: 'You fold to pressure. Otto keeps the pressure on.' },
+  fish: { name: 'Loose-passive player', short: 'Passive', blurb: 'You play many hands but rarely bet. Otto bets its good hands relentlessly.' },
 };
