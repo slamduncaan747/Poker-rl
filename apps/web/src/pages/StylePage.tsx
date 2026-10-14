@@ -1,10 +1,11 @@
-import { type ArchetypeSignature, type OpponentSnapshot, type StatKey, accuracy, matchArchetypes } from '@poker-rl/engine';
+import { AIAgent, ARCHETYPES, type ArchetypeSignature, type OpponentSnapshot, OpponentModel, Rng, type StatKey, StyleAgent, TRAINING_SAMPLING, accuracy, matchArchetypes, playHand, randomDeal } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { MarkIcon } from '../components/brain/HandReview';
 import { pct, per100, signedMoney } from '../lib/format';
 import { findLeaks } from '../lib/leaks';
 import { HABIT, MARKS, type Mark, STYLES, markOf, voice } from '../lib/otto';
+import type { Models } from '../lib/models';
 import { usePlay } from '../lib/store';
 import type { CloneIn, CloneOut, CloneProgress } from '../workers/clone.worker';
 import CloneWorker from '../workers/clone.worker.ts?worker&inline';
@@ -21,40 +22,75 @@ function statsOf(snap: OpponentSnapshot): Record<StatKey, number> {
   return Object.fromEntries(snap.stats.map((s) => [s.key, s.mean])) as Record<StatKey, number>;
 }
 
+const SAMPLE_TYPES = ['station', 'maniac', 'nit', 'scared', 'fish', 'lag'];
+const SAMPLE_HANDS = 80;
+
+/** Otto's read on a simulated player: a reference type watched for a few dozen hands. */
+function sampleRead(models: Models, type: string, seed: number): OpponentModel {
+  const model = new OpponentModel(models.exploit.baseline, undefined, models.exploit.baselineBetSize);
+  const watcher = new AIAgent(models.blueprint, null, { sampling: TRAINING_SAMPLING }, model);
+  const player = new StyleAgent(ARCHETYPES[type]);
+  const rng = new Rng(seed);
+  for (let i = 0; i < SAMPLE_HANDS; i++) playHand([watcher, player], randomDeal(rng), i & 1, rng);
+  return model;
+}
+
 export function StylePage() {
   const bot = usePlay((s) => s.bot);
   const models = usePlay((s) => s.models);
   const history = usePlay((s) => s.history);
+  const [sample, setSample] = useState<{ model: OpponentModel; id: number; type: string } | null>(null);
   if (!bot || !models) return null;
-  const snap = bot.model.snapshot();
+  const model = sample?.model ?? bot.model;
+  const snap = model.snapshot();
   const n = snap.hands;
-  const ready = n >= MIN_HANDS;
-  const top = matchArchetypes(bot.model, models.exploit.signatures)[0];
+  const ready = !!sample || n >= MIN_HANDS;
+  const top = matchArchetypes(model, models.exploit.signatures)[0];
   const style = STYLES[top.id] ?? STYLES.gto;
+  const preview = () => {
+    const id = (Math.random() * 1e9) | 0;
+    const pool = SAMPLE_TYPES.filter((t) => t !== sample?.type);
+    const type = pool[id % pool.length];
+    setSample({ model: sampleRead(models, type, id), id, type });
+  };
 
   return (
     <div className="mx-auto flex max-w-[1080px] flex-col gap-10 px-4 pb-16 pt-8 lg:px-6">
       <header>
         <div className="eyebrow">
-          Your style · {n} {n === 1 ? 'hand' : 'hands'}
+          {sample ? `Sample player · ${n} hands` : `Your style · ${n} ${n === 1 ? 'hand' : 'hands'}`}
         </div>
         {ready ? (
           <>
             <h1 className="mt-2 text-[34px] font-extrabold leading-[1.05] sm:text-[44px]">
-              You play like a <span className="text-gold">{style.name.toLowerCase()}</span>.
+              {sample ? 'This player plays like a ' : 'You play like a '}
+              <span className="text-gold">{style.name.toLowerCase()}</span>.
             </h1>
-            <p className="mt-3 max-w-[620px] text-[16px] text-ink-300">{style.blurb}</p>
+            <p className="mt-3 max-w-[620px] text-[16px] text-ink-300">{sample ? style.blurb.replace(/\bYou\b/g, 'They').replace(/\byou\b/g, 'them') : style.blurb}</p>
+            {sample && (
+              <div className="mt-4 flex gap-5 font-mono text-[11px] tracking-[0.08em]">
+                <button onClick={preview} className="text-ink-300 hover:text-ink-100">
+                  TRY ANOTHER SAMPLE
+                </button>
+                <button onClick={() => setSample(null)} className="text-ink-300 hover:text-ink-100">
+                  BACK TO YOU
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <>
             <h1 className="mt-2 text-[34px] font-extrabold leading-[1.05] sm:text-[44px]">Otto is still reading you.</h1>
-            <div className="mt-4 flex max-w-[420px] items-center gap-4">
-              <span className="h-[3px] flex-1 bg-ink-700">
+            <div className="mt-4 flex max-w-[520px] flex-wrap items-center gap-3">
+              <span className="h-[3px] min-w-[120px] flex-1 bg-ink-700">
                 <span className="block h-full bg-gold" style={{ width: `${(n / MIN_HANDS) * 100}%` }} />
               </span>
               <a href="#play" className="btn btn-gold min-h-[44px] px-6 text-sm">
                 Play {MIN_HANDS - n} more
               </a>
+              <button onClick={preview} className="btn min-h-[44px] border border-ink-600 px-4 text-sm hover:border-ink-100">
+                Preview with a sample player
+              </button>
             </div>
           </>
         )}
@@ -62,12 +98,12 @@ export function StylePage() {
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section>
-          <h2 className="eyebrow mb-3">Where you sit</h2>
-          <StyleMap snap={snap} signatures={models.exploit.signatures} faint={!ready} />
+          <h2 className="eyebrow mb-3">{sample ? 'Where they sit' : 'Where you sit'}</h2>
+          <StyleMap snap={snap} signatures={models.exploit.signatures} faint={!ready} label={sample ? 'Sample' : 'You'} />
         </section>
         <section>
           <h2 className="eyebrow mb-3">Stress test</h2>
-          {ready ? <StressTest snap={snap} /> : <Locked text={`Unlocks after ${MIN_HANDS} hands`} />}
+          {ready ? <StressTest key={sample ? `s${sample.id}` : 'you'} cacheKey={sample ? `s${sample.id}` : `you-${n}`} snap={snap} whose={sample ? "this player's" : 'your'} /> : <Locked text={`Unlocks after ${MIN_HANDS} hands`} />}
         </section>
       </div>
 
@@ -76,10 +112,12 @@ export function StylePage() {
           <h2 className="eyebrow mb-3">What Otto noticed</h2>
           {ready ? <Noticed snap={snap} /> : <Locked text="Nothing yet" />}
         </section>
-        <section>
-          <h2 className="eyebrow mb-3">Your decisions</h2>
-          <Decisions history={history} />
-        </section>
+        {!sample && (
+          <section>
+            <h2 className="eyebrow mb-3">Your decisions</h2>
+            <Decisions history={history} />
+          </section>
+        )}
       </div>
     </div>
   );
@@ -90,7 +128,7 @@ function Locked({ text }: { text: string }) {
 }
 
 /** A map of player types by looseness and aggression, with you on it. */
-function StyleMap({ snap, signatures, faint }: { snap: OpponentSnapshot; signatures: ArchetypeSignature[]; faint: boolean }) {
+function StyleMap({ snap, signatures, faint, label }: { snap: OpponentSnapshot; signatures: ArchetypeSignature[]; faint: boolean; label: string }) {
   const W = 440;
   const H = 320;
   const m = { l: 18, r: 16, t: 16, b: 26 };
@@ -132,18 +170,18 @@ function StyleMap({ snap, signatures, faint }: { snap: OpponentSnapshot; signatu
         <circle cx={mx} cy={my} r={halo} fill="var(--color-gold)" fillOpacity="0.12" stroke="var(--color-gold)" strokeOpacity="0.4" strokeDasharray="2 3" />
         <circle cx={mx} cy={my} r="6.5" fill="var(--color-gold)" />
         <text x={mx} y={my - halo - 6} textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--color-gold)">
-          You
+          {label}
         </text>
       </motion.g>
     </svg>
   );
 }
 
-const cache: { hands: number; result: CloneProgress } = { hands: -1, result: null as unknown as CloneProgress };
+const cache: { key: string; result: CloneProgress | null } = { key: '', result: null };
 
 /** A clone of your style plays the balanced bot and Otto; how much each wins shows how exploitable you are. */
-function StressTest({ snap }: { snap: OpponentSnapshot }) {
-  const [p, setP] = useState<CloneProgress | null>(cache.hands === snap.hands ? cache.result : null);
+function StressTest({ snap, cacheKey, whose }: { snap: OpponentSnapshot; cacheKey: string; whose: string }) {
+  const [p, setP] = useState<CloneProgress | null>(cache.key === cacheKey ? cache.result : null);
   const [error, setError] = useState<string | null>(null);
   const worker = useRef<Worker | null>(null);
   const snapRef = useRef(snap);
@@ -168,19 +206,18 @@ function StressTest({ snap }: { snap: OpponentSnapshot }) {
   useEffect(() => {
     const w = new CloneWorker();
     worker.current = w;
-    const hands = snapRef.current.hands;
     w.onmessage = (e: MessageEvent<CloneOut>) => {
       const m = e.data;
       if (m.type === 'error') setError(m.message);
       else {
         setP(m);
         if (m.finished) {
-          cache.hands = hands;
+          cache.key = cacheKey;
           cache.result = m;
         }
       }
     };
-    if (cache.hands !== hands) run();
+    if (cache.key !== cacheKey) run();
     return () => w.terminate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -216,7 +253,7 @@ function StressTest({ snap }: { snap: OpponentSnapshot }) {
           RUN AGAIN
         </button>
       </div>
-      <p className="mt-2 text-[14px] text-ink-400">A clone of your style played {(SIM_HANDS * 2).toLocaleString()} hands against each bot.</p>
+      <p className="mt-2 text-[14px] text-ink-400">A clone of {whose} style played {(SIM_HANDS * 2).toLocaleString()} hands against each bot.</p>
 
       <div className="mt-5 flex flex-col gap-4">
         <ResultRow label="Vs balanced bot" value={you?.gto} se={p?.gtoSE} scale={scale} />

@@ -192,7 +192,7 @@ function ResultLine() {
       : 'You folded';
   return (
     <div className="flex items-baseline gap-3">
-      <span className={`tabular font-mono text-[30px] font-bold leading-none ${won ? 'text-gold' : 'text-ink-100'}`}>
+      <span className={`tabular whitespace-nowrap font-mono text-[26px] font-bold leading-none sm:text-[30px] ${won ? 'text-gold' : 'text-ink-100'}`}>
         {signedMoney(last.net)}
       </span>
       <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-400">{sub}</span>

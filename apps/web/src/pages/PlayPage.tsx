@@ -4,7 +4,6 @@ import { HandReview } from '../components/brain/HandReview';
 import { ActionBar } from '../components/table/ActionBar';
 import { Table } from '../components/table/Table';
 import { Segmented, Toggle } from '../components/ui/Controls';
-import { Welcome } from '../components/ui/Welcome';
 import { signedMoney } from '../lib/format';
 import { usePlay } from '../lib/store';
 
@@ -28,7 +27,6 @@ export function PlayPage() {
   const review = phase === 'over' && last && last.id === handNo ? last : null;
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-3 sm:pt-5 lg:px-6">
-      <Welcome />
       <TopBar />
       <div className={`mt-2 grid gap-6 sm:mt-3 ${review && wide ? 'grid-cols-[minmax(0,1fr)_340px]' : ''}`}>
         <div className="mx-auto flex w-full min-w-0 max-w-[1000px] flex-col gap-3">
