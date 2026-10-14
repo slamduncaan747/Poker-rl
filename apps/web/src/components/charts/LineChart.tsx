@@ -21,6 +21,8 @@ interface Props {
   empty?: string;
   /** a dimension line between the last points of two series, labelled (e.g. the gap between two win-rate curves) */
   bracket?: { a: number; b: number; label: string; sub?: string };
+  /** show the series legend above the chart */
+  legend?: boolean;
 }
 
 function niceTicks(min: number, max: number, count = 4): number[] {
@@ -35,7 +37,7 @@ function niceTicks(min: number, max: number, count = 4): number[] {
 }
 
 /** Responsive SVG line chart with a crosshair tooltip and legend. */
-export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) => v.toFixed(1), formatX = (v) => `${Math.round(v)}`, zeroLine = true, logX = false, empty = 'No data yet', bracket }: Props) {
+export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) => v.toFixed(1), formatX = (v) => `${Math.round(v)}`, zeroLine = true, logX = false, empty = 'No data yet', bracket, legend = true }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -115,7 +117,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
 
   return (
     <div ref={box} className="relative">
-      {series.length > 1 && (
+      {legend && series.length > 1 && (
         <div className="mb-2 flex flex-wrap gap-4 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-300">
           {series.map((s) => (
             <span key={s.name} className="flex items-center gap-2">

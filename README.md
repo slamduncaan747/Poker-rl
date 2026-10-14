@@ -1,18 +1,22 @@
 <div align="center">
 
-# ♠ Poker RL
+# Otto — a poker AI that learns how you play
 
-**A heads-up no-limit hold'em AI that plays game-theory-optimal poker — then learns to exploit *you*.**
+**Heads-up no-limit hold'em AI, built from scratch: it plays game-theory-optimal poker learned through self-play, builds a Bayesian read on your habits, and uses a reinforcement-learned policy network to exploit them — live, in your browser.**
 
-A Monte Carlo CFR equilibrium blueprint, a Bayesian opponent model, and a PPO-trained policy network that tilts the blueprint toward the plays that punish an opponent's leaks — all running live in the browser with an explainable "X-Ray" of every decision.
+### [▶ Play Otto](https://slamduncaan747.github.io/Poker-rl/)
 
 `TypeScript` · `React 19` · `Vite` · `Tailwind v4` · `Framer Motion` · `Web Workers` · `Node worker_threads` · `Vitest`
 
+Built by **Duncan Larzelere** · [X @duncanlarz](https://x.com/duncanlarz)
+
 </div>
+
+![Otto](apps/web/public/og.png)
 
 ![Play](docs/screenshots/play.png)
 
-**[▶ Play the live demo](https://slamduncaan747.github.io/Poker-rl/)** · or run it locally with `npm install && npm run dev`
+Run it locally with `npm install && npm run dev`.
 
 ---
 

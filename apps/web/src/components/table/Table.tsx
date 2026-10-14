@@ -313,6 +313,10 @@ function IdleTable() {
           <PlayingCard key={c} card={c} size="lg" delay={0.15 + i * 0.07} />
         ))}
       </div>
+      <div className="text-center">
+        <div className="text-[22px] font-extrabold">You vs Otto</div>
+        <div className="mt-1 text-[14px] text-ink-400">Heads-up hold'em. $200 each. Best five-card hand wins.</div>
+      </div>
       <button onClick={newHand} disabled={phase === 'loading'} className="btn btn-gold min-h-[52px] px-10 text-base">
         Deal
       </button>

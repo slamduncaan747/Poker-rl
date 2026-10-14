@@ -19,16 +19,16 @@ const ARCHETYPE_BLURB: Record<string, string> = {
   fish: 'Loose and passive. Otto isolates and value-bets relentlessly.',
 };
 
-const CODES: Record<string, string> = {
-  station: 'CS',
-  maniac: 'MA',
-  nit: 'NI',
-  tag: 'TA',
-  lag: 'LA',
-  scared: 'SM',
-  fish: 'PF',
-  gto: 'GT',
-  custom: '+',
+const LABELS: Record<string, string> = {
+  station: 'Calling station',
+  maniac: 'Maniac',
+  nit: 'Rock',
+  tag: 'Tight-aggressive',
+  lag: 'Loose-aggressive',
+  scared: 'Scared money',
+  fish: 'Loose-passive',
+  gto: 'Balanced bot',
+  custom: 'Design your own',
 };
 
 const OPPONENTS = [...Object.keys(ARCHETYPES), 'gto', 'custom'];
@@ -82,6 +82,16 @@ export function ArenaPage() {
     setRunning(true);
     worker.current?.postMessage({ type: 'start', opponent: o, hands, turbo, seed: (Math.random() * 1e9) | 0, lambda: 1 } satisfies ArenaIn);
   };
+  // Run the default match as soon as the models are in, so the page opens on a result.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (ready && !autoStarted.current) {
+      autoStarted.current = true;
+      start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
   const stop = () => {
     worker.current?.postMessage({ type: 'stop' } satisfies ArenaIn);
     setRunning(false);
@@ -94,13 +104,13 @@ export function ArenaPage() {
   const series = useMemo(
     () => [
       { name: 'Otto', color: 'var(--color-exploit)', points: ticks.map((t) => [t.hand, t.exploit * 2] as [number, number]) },
-      { name: 'Balanced', color: 'var(--color-ink-100)', dashed: true, points: ticks.map((t) => [t.hand, t.gto * 2] as [number, number]) },
+      { name: 'Balanced', color: 'var(--color-gto)', dashed: true, points: ticks.map((t) => [t.hand, t.gto * 2] as [number, number]) },
     ],
     [ticks],
   );
   const tiltSeries = useMemo(() => [{ name: 'Changed play', color: 'var(--color-exploit)', points: ticks.slice(1).map((t) => [t.hand, t.tilt * 100] as [number, number]) }], [ticks]);
 
-  const oppName = opp === 'gto' ? 'GTO Bot' : opp === 'custom' ? 'Custom' : ARCHETYPES[opp].name;
+  const oppName = LABELS[opp];
   const significant = !!prog && Math.abs(prog.diffMean) > 1.96 * prog.diffSE;
   const blurb = opp === 'custom' ? 'Your own design.' : (ARCHETYPE_BLURB[opp] ?? '').split('. ')[0].replace(/\.$/, '');
   const lastTilt = ticks.length > 1 ? ticks[ticks.length - 1].tilt : null;
@@ -133,9 +143,9 @@ export function ArenaPage() {
       <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="glass self-start" aria-label="Match setup">
           <div className="border-b border-ink-100 px-3.5 py-2.5 font-mono text-[11px] tracking-[0.08em]">OPPONENT</div>
-          <div role="radiogroup" aria-label="Opponent" className="grid grid-cols-3">
+          <div role="radiogroup" aria-label="Opponent" className="grid grid-cols-2">
             {OPPONENTS.map((id, i) => {
-              const name = id === 'gto' ? 'GTO Bot' : id === 'custom' ? 'Custom' : ARCHETYPES[id].name;
+              const name = LABELS[id];
               const on = opp === id;
               return (
                 <button
@@ -146,11 +156,11 @@ export function ArenaPage() {
                   title={name}
                   onClick={() => setOpp(id)}
                   disabled={running}
-                  className={`min-h-[58px] border-ink-600 font-mono text-[15px] transition disabled:opacity-50 ${i % 3 ? 'border-l' : ''} ${i >= 3 ? 'border-t' : ''} ${
+                  className={`min-h-[46px] border-ink-600 px-3 text-left text-[13.5px] transition disabled:opacity-50 ${i % 2 ? 'border-l' : ''} ${i >= 2 ? 'border-t' : ''} ${id === 'custom' ? 'col-span-2' : ''} ${
                     on ? 'bg-ink-100 font-bold text-ink-950' : id === 'custom' ? 'text-ink-400 hover:text-ink-100' : 'text-ink-100 hover:bg-ink-800'
                   }`}
                 >
-                  {CODES[id]}
+                  {name}
                 </button>
               );
             })}
@@ -268,7 +278,7 @@ export function ArenaPage() {
                   <div className="flex flex-col gap-1.5 px-4 py-3">
                     {prog.read.slice(0, 3).map((r, i) => (
                       <div key={r.id} className="grid grid-cols-[120px_1fr_44px] items-center gap-3 text-[13px]">
-                        <span className={i === 0 ? 'font-bold' : 'text-ink-400'}>{r.name}</span>
+                        <span className={i === 0 ? 'font-bold' : 'text-ink-400'}>{LABELS[r.id] ?? r.name}</span>
                         <span className="h-[6px] bg-ink-700">
                           <motion.span className="block h-full" style={{ background: i === 0 ? 'var(--color-exploit)' : 'var(--color-ink-500)' }} animate={{ width: `${r.prob * 100}%` }} />
                         </span>
@@ -310,7 +320,7 @@ export function ArenaPage() {
               <div className="flex justify-between border-b border-ink-600 px-4 py-2.5 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
                 LIVE HANDS
                 <span>
-                  <span className="text-exploit">ADAPTIVE</span> / BALANCED
+                  <span className="text-exploit">OTTO</span> / BALANCED
                 </span>
               </div>
               <div className="overflow-x-auto">
@@ -327,7 +337,7 @@ export function ArenaPage() {
                         <MiniCard card={s.oppCards[0]} />
                         <MiniCard card={s.oppCards[1]} />
                       </span>
-                      <span className="flex gap-0.5 pl-3">
+                      <span className="hidden gap-0.5 pl-3 sm:flex">
                         {s.board.map((c) => (
                           <MiniCard key={c} card={c} />
                         ))}

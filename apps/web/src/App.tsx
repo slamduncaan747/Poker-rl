@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { usePlay } from './lib/store';
+import { OttoFace } from './components/table/Otto';
+import { HomePage } from './pages/HomePage';
 import { PlayPage } from './pages/PlayPage';
 
 const ArenaPage = lazy(() => import('./pages/ArenaPage').then((m) => ({ default: m.ArenaPage })));
@@ -8,18 +10,18 @@ const LabPage = lazy(() => import('./pages/LabPage').then((m) => ({ default: m.L
 const StylePage = lazy(() => import('./pages/StylePage').then((m) => ({ default: m.StylePage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 
-type Route = 'play' | 'you' | 'arena' | 'lab' | 'how';
+type Route = 'home' | 'play' | 'you' | 'arena' | 'lab' | 'how';
 const ROUTES: Array<{ id: Route; label: string; short: string }> = [
   { id: 'play', label: 'Play', short: 'Play' },
   { id: 'you', label: 'Your style', short: 'You' },
   { id: 'arena', label: 'Arena', short: 'Arena' },
   { id: 'lab', label: 'Lab', short: 'Lab' },
-  { id: 'how', label: 'How', short: 'How' },
+  { id: 'how', label: 'How it works', short: 'How' },
 ];
 
 function readRoute(): Route {
   const h = window.location.hash.replace('#', '') as Route;
-  return ROUTES.some((r) => r.id === h) ? h : 'play';
+  return ROUTES.some((r) => r.id === h) ? h : 'home';
 }
 
 export function App() {
@@ -28,7 +30,10 @@ export function App() {
   const phase = usePlay((s) => s.phase);
   useEffect(() => {
     void init();
-    const onHash = () => setRoute(readRoute());
+    const onHash = () => {
+      setRoute(readRoute());
+      window.scrollTo(0, 0);
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, [init]);
@@ -36,7 +41,11 @@ export function App() {
   return (
     <div className="app-bg min-h-screen">
       <Header route={route} />
-      {phase === 'loading' || phase === 'error' ? (
+      {route === 'home' ? (
+        <motion.main key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          <HomePage />
+        </motion.main>
+      ) : phase === 'loading' || phase === 'error' ? (
         <Loading />
       ) : (
         <AnimatePresence mode="wait">
@@ -59,8 +68,9 @@ function Header({ route }: { route: Route }) {
   return (
     <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className="sticky z-30 border-b border-ink-600 bg-ink-950">
       <div className="mx-auto flex h-[54px] max-w-[1400px] items-center gap-4 px-4 lg:px-6">
-        <a href="#play" className="whitespace-nowrap text-[16px] font-extrabold tracking-[0.04em] text-ink-100">
-          POKER-RL
+        <a href="#" className="flex items-center gap-2.5 whitespace-nowrap text-[17px] font-extrabold text-ink-100" aria-label="Otto home">
+          <OttoFace mood="idle" size={26} />
+          <span className="hidden sm:inline">Otto</span>
         </a>
         <nav className="ml-auto flex gap-0.5 overflow-x-auto font-mono text-[12px] tracking-[0.08em] sm:ml-6">
           {ROUTES.map((r) => (
@@ -87,7 +97,7 @@ function Loading() {
   return (
     <div className="grid min-h-[70vh] place-items-center px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
-        <div className="text-2xl font-extrabold tracking-[0.04em]">POKER-RL</div>
+        <OttoFace mood="thinking" size={48} />
         {error ? (
           <div className="text-sm text-loss">Couldn't load the models: {error}</div>
         ) : (
