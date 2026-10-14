@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { usePlay } from './lib/store';
 import { OttoFace } from './components/table/Otto';
-import { embedded, useReportHeight } from './lib/embed';
+import { autosize, useReportHeight } from './lib/embed';
 import { PlayPage } from './pages/PlayPage';
 
 const ArenaPage = lazy(() => import('./pages/ArenaPage').then((m) => ({ default: m.ArenaPage })));
@@ -30,8 +30,7 @@ export function App() {
     void init();
     const onHash = () => {
       setRoute(readRoute());
-      // inside a host page, leave the host's scroll position alone
-      if (!embedded) window.scrollTo(0, 0);
+      window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -40,7 +39,7 @@ export function App() {
   useReportHeight();
 
   return (
-    <div className={`app-bg ${embedded ? '' : 'min-h-screen'}`}>
+    <div className={`app-bg ${autosize ? '' : 'min-h-screen'}`}>
       <Header route={route} />
       {phase === 'loading' || phase === 'error' ? (
         <Loading />
@@ -62,7 +61,7 @@ export function App() {
 
 function Header({ route }: { route: Route }) {
   return (
-    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className={`${embedded ? '' : 'sticky'} z-30 border-b border-ink-600 bg-ink-950`}>
+    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className={`${autosize ? '' : 'sticky'} z-30 border-b border-ink-600 bg-ink-950`}>
       <div className="mx-auto flex h-[54px] max-w-[1400px] items-center gap-4 px-4 lg:px-6">
         <a href="#play" className="flex items-center gap-2.5 whitespace-nowrap text-[17px] font-extrabold text-ink-100" aria-label="Otto">
           <OttoFace mood="idle" size={26} />
