@@ -2,7 +2,7 @@ import { type Card, type HUNLState } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { money } from '../../lib/format';
-import { embedded } from '../../lib/embed';
+import { autosize } from '../../lib/embed';
 import { bestFive } from '../../lib/hands';
 import { BOT, HUMAN, usePlay } from '../../lib/store';
 import { FitBox } from '../ui/FitBox';
@@ -38,9 +38,9 @@ export function Table() {
 
   const vp = useViewport();
   const narrow = vp.w < 720;
-  // On desktop, keep the whole play area inside one screen. Embedded, the frame
-  // grows to fit the content, so only the width limits the table.
-  const maxHeight = vp.w >= 1024 && !embedded ? Math.max(380, vp.h - 300) : undefined;
+  // On desktop, keep the whole play area inside one screen. In a self-sizing
+  // embed the frame grows to fit the content, so only the width limits the table.
+  const maxHeight = vp.w >= 1024 && !autosize ? Math.max(380, vp.h - 300) : undefined;
   const W = narrow ? 560 : 960;
   const H = narrow ? 580 : 600;
   const potTop = narrow ? 200 : 196;

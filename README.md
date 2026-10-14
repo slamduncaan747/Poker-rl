@@ -46,10 +46,16 @@ Run it locally with `npm install && npm run dev`.
 
 ## Embedding
 
-Otto is built to sit as a section of a larger site. Embed it in an iframe with `?embed`; it drops the full-page chrome and credits, leaves the host's scroll alone, and posts its content height so the frame can size itself:
+Otto is built to sit as a section of a larger site. Embed it in an iframe with `?embed` and it drops its footer credits; give the frame a fixed height and Otto scrolls inside it like a page of its own:
 
 ```html
-<iframe id="otto" src="https://slamduncaan747.github.io/Poker-rl/?embed#play" style="width:100%;border:0" title="Otto"></iframe>
+<iframe src="https://slamduncaan747.github.io/Poker-rl/?embed#play" style="width:100%;height:100vh;border:0" title="Otto"></iframe>
+```
+
+With `?embed=auto` it instead posts its content height so the frame can grow to fit and the host page scrolls:
+
+```html
+<iframe id="otto" src="https://slamduncaan747.github.io/Poker-rl/?embed=auto#play" style="width:100%;border:0" title="Otto"></iframe>
 <script>
   addEventListener('message', (e) => {
     if (e.data?.type === 'otto:height') document.getElementById('otto').style.height = e.data.height + 'px';
