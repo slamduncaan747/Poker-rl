@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { usePlay } from '../../lib/store';
 
 const STEPS = [
-  { n: 1, title: 'Starts balanced', body: 'Unbeatable equilibrium play.' },
-  { n: 2, title: 'Reads you', body: 'Tracks how you fold, call, bluff.' },
-  { n: 3, title: 'Adapts', body: 'Punishes your habits — and shows why.' },
+  { n: 1, title: 'Play Otto', body: 'Heads-up poker against an AI.' },
+  { n: 2, title: 'It reads you', body: 'Otto learns your habits as you play.' },
+  { n: 3, title: 'See your style', body: 'Find out how exploitable you are.' },
 ];
 
 function seen(): boolean {
@@ -39,9 +39,9 @@ export function Welcome() {
             transition={{ type: 'spring', stiffness: 240, damping: 22 }}
             className="glass my-auto w-full max-w-[640px] p-5 sm:p-8"
           >
-            <div className="eyebrow">Heads-up no-limit · 100 bb</div>
+            <div className="eyebrow">Heads-up no-limit hold’em · $1/$2</div>
             <h2 className="mt-3 text-[30px] font-extrabold leading-[1.08] sm:text-[38px]">
-              Beat Nash. <span className="text-gold">It learns your leaks.</span>
+              Beat Otto. <span className="text-gold">It learns your habits.</span>
             </h2>
             <div className="mt-6 grid border border-ink-600 sm:grid-cols-3">
               {STEPS.map((s, i) => (
@@ -61,7 +61,7 @@ export function Welcome() {
               ))}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              <div className="hidden font-mono text-[10.5px] tracking-[0.08em] text-ink-500 sm:block">F · C · R · SPACE</div>
+              <div />
               <div className="flex gap-2">
                 <a href="#how" onClick={() => close(false)} className="btn min-h-[46px] border border-ink-100 px-5 text-sm hover:bg-ink-800">
                   How it works

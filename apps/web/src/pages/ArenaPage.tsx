@@ -1,13 +1,23 @@
 import { ARCHETYPES, STAT_INFO, type StatKey, type Style } from '@poker-rl/engine';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ARCHETYPE_BLURB } from '../components/brain/ReadTab';
 import { LineChart } from '../components/charts/LineChart';
 import { MiniCard } from '../components/table/PlayingCard';
 import { Segmented } from '../components/ui/Controls';
-import { pct, signed } from '../lib/format';
+import { pct, per100, signedMoney } from '../lib/format';
 import type { ArenaIn, ArenaOpponent, ArenaOut, ArenaSample, ArenaTick } from '../workers/arena.worker';
 import ArenaWorker from '../workers/arena.worker.ts?worker&inline';
+
+const ARCHETYPE_BLURB: Record<string, string> = {
+  gto: 'Balanced and hard to exploit — Otto stays near equilibrium.',
+  station: 'Calls too much. Otto value-bets thinner and bluffs less.',
+  maniac: 'Bets and raises relentlessly. Otto calls down lighter and traps.',
+  nit: 'Plays very few hands and folds under pressure. Otto steals and bluffs more.',
+  tag: 'Solid and aggressive. Few leaks — Otto makes small adjustments.',
+  lag: 'Loose and aggressive. Otto widens its calling and 3-betting ranges.',
+  scared: 'Folds too often to aggression. Otto applies maximum pressure.',
+  fish: 'Loose and passive. Otto isolates and value-bets relentlessly.',
+};
 
 const CODES: Record<string, string> = {
   station: 'CS',
@@ -83,8 +93,8 @@ export function ArenaPage() {
 
   const series = useMemo(
     () => [
-      { name: 'Adaptive', color: 'var(--color-exploit)', points: ticks.map((t) => [t.hand, t.exploit] as [number, number]) },
-      { name: 'Balanced', color: 'var(--color-ink-100)', dashed: true, points: ticks.map((t) => [t.hand, t.gto] as [number, number]) },
+      { name: 'Otto', color: 'var(--color-exploit)', points: ticks.map((t) => [t.hand, t.exploit * 2] as [number, number]) },
+      { name: 'Balanced', color: 'var(--color-ink-100)', dashed: true, points: ticks.map((t) => [t.hand, t.gto * 2] as [number, number]) },
     ],
     [ticks],
   );
@@ -107,7 +117,7 @@ export function ArenaPage() {
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Arena</h1>
           <p className="mt-2 text-[17px] text-ink-300">
-            Same cards. <span className="text-exploit">Adaptive</span> vs balanced.
+            Same cards. <span className="text-exploit">Otto</span> vs a balanced bot.
           </p>
         </div>
         {prog && (
@@ -218,7 +228,7 @@ export function ArenaPage() {
 
         <div className="flex min-w-0 flex-col gap-6">
           <div className="glass grid grid-cols-1 sm:grid-cols-3">
-            <Stat n={1} label="Adaptive" accent mean={prog?.exploitMean} se={prog?.exploitSE} />
+            <Stat n={1} label="Otto" accent mean={prog?.exploitMean} se={prog?.exploitSE} />
             <Stat n={2} label="Balanced" mean={prog?.gtoMean} se={prog?.gtoSE} border />
             <div className="border-t border-ink-600 px-4 py-3.5 sm:border-l sm:border-t-0">
               <div className="flex items-center justify-between font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
@@ -230,23 +240,23 @@ export function ArenaPage() {
                 )}
               </div>
               <div className={`tabular mt-1 font-mono text-[30px] font-bold leading-none ${prog && prog.diffMean > 0 ? 'text-gold' : prog ? 'text-ink-100' : 'text-ink-500'}`}>
-                {prog ? signed(prog.diffMean * 100, 0) : '—'}
+                {prog ? per100(prog.diffMean) : '—'}
               </div>
               <div className="mt-1.5 font-mono text-[10px] tracking-[0.06em] text-ink-500">
-                {prog ? `±${(1.96 * prog.diffSE * 100).toFixed(0)} · ` : ''}BB / 100
+                {prog ? `±$${(1.96 * prog.diffSE * 200).toFixed(0)} · ` : ''}PER 100 HANDS
               </div>
             </div>
           </div>
 
           <section className="glass p-4 sm:p-5" aria-label={`Winnings vs ${oppName}`}>
-            <div className="mb-3 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">BIG BLINDS WON · VS {oppName.toUpperCase()}</div>
+            <div className="mb-3 font-mono text-[10.5px] tracking-[0.08em] text-ink-400">DOLLARS WON · VS {oppName.toUpperCase()}</div>
             <LineChart
               series={series}
               height={280}
               xLabel="deals"
-              formatY={(v) => (Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K` : v.toFixed(0))}
+              formatY={(v) => `${v < 0 ? '−' : ''}$${Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K` : Math.abs(v).toFixed(0)}`}
               empty="Pick an opponent · Run"
-              bracket={prog && ticks.length > 2 ? { a: 0, b: 1, label: signed(prog.diffMean * 100, 0), sub: '/100' } : undefined}
+              bracket={prog && ticks.length > 2 ? { a: 0, b: 1, label: per100(prog.diffMean), sub: '/100' } : undefined}
             />
           </section>
 
@@ -323,9 +333,9 @@ export function ArenaPage() {
                         ))}
                       </span>
                       <span className="tabular ml-auto font-mono">
-                        <span className={s.exploitNet >= 0 ? 'text-exploit' : 'text-ink-400'}>{signed(s.exploitNet)}</span>
+                        <span className={s.exploitNet >= 0 ? 'text-exploit' : 'text-ink-400'}>{signedMoney(s.exploitNet * 100)}</span>
                         <span className="text-ink-600"> / </span>
-                        <span className={s.gtoNet >= 0 ? 'text-ink-100' : 'text-ink-400'}>{signed(s.gtoNet)}</span>
+                        <span className={s.gtoNet >= 0 ? 'text-ink-100' : 'text-ink-400'}>{signedMoney(s.gtoNet * 100)}</span>
                       </span>
                     </div>
                   ))}
@@ -349,9 +359,9 @@ function Stat({ n, label, accent, mean, se, border }: { n: number; label: string
         {label.toUpperCase()}
       </div>
       <div className={`tabular mt-1 font-mono text-[30px] font-bold leading-none ${mean === undefined ? 'text-ink-500' : 'text-ink-100'}`}>
-        {mean !== undefined ? signed(mean * 100, 0) : '—'}
+        {mean !== undefined ? per100(mean) : '—'}
       </div>
-      <div className="mt-1.5 font-mono text-[10px] tracking-[0.06em] text-ink-500">{se !== undefined ? `±${(1.96 * se * 100).toFixed(0)} · ` : ''}BB / 100</div>
+      <div className="mt-1.5 font-mono text-[10px] tracking-[0.06em] text-ink-500">{se !== undefined ? `±$${(1.96 * se * 200).toFixed(0)} · ` : ''}PER 100 HANDS</div>
     </div>
   );
 }

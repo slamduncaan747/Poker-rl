@@ -1,16 +1,14 @@
 import { type Code, raiseToForFraction } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
-import { bb, pct } from '../../lib/format';
+import { useEffect, useState } from 'react';
+import { money, signedMoney } from '../../lib/format';
 import { HUMAN, usePlay } from '../../lib/store';
 
 const PRESETS: Array<{ label: string; key: string; frac: number | 'min' | 'all' }> = [
-  { label: 'Min', key: '1', frac: 'min' },
-  { label: '⅓', key: '2', frac: 1 / 3 },
-  { label: '½', key: '3', frac: 0.5 },
-  { label: '¾', key: '4', frac: 0.75 },
-  { label: 'Pot', key: '5', frac: 1 },
-  { label: 'All-in', key: '6', frac: 'all' },
+  { label: '½', key: '1', frac: 0.5 },
+  { label: '¾', key: '2', frac: 0.75 },
+  { label: 'Pot', key: '3', frac: 1 },
+  { label: 'All-in', key: '4', frac: 'all' },
 ];
 
 /** Action colours: passive → aggressive (validated palette; always paired with labels). */
@@ -33,7 +31,6 @@ export function ActionBar() {
   const phase = usePlay((s) => s.phase);
   const humanAct = usePlay((s) => s.humanAct);
   const newHand = usePlay((s) => s.newHand);
-  const requestHint = usePlay((s) => s.requestHint);
   const myTurn = phase === 'human' && state && !state.terminal && state.toAct === HUMAN;
 
   const toCall = state && myTurn ? state.toCall(HUMAN) : 0;
@@ -75,8 +72,7 @@ export function ActionBar() {
         return;
       }
       if (!myTurn) return;
-      if (k === 'h') requestHint();
-      else if (k === 'f') doFold();
+      if (k === 'f') doFold();
       else if (k === 'c' || k === 'k') doCall();
       else if (k === 'r' || k === 'b') doRaise();
       else if (k === 'a') doRaise(maxTo);
@@ -90,14 +86,8 @@ export function ActionBar() {
   });
 
   const fill = minTo !== null && maxTo > minTo ? ((to - minTo) / (maxTo - minTo)) * 100 : 100;
-  const potFrac = useMemo(() => {
-    if (!state || minTo === null) return 0;
-    const cur = state.streetBet[1 - HUMAN];
-    return (to - cur) / (state.pot + toCall);
-  }, [state, to, toCall, minTo]);
-
-  const toCallLabel = toCall > 0 ? `Call ${bb(toCall)}` : 'Check';
-  const raiseLabel = `${to >= maxTo ? 'All-in' : raiseWord === 'Bet' ? 'Bet' : 'Raise'} ${bb(to)}`;
+  const toCallLabel = toCall > 0 ? `Call ${money(toCall)}` : 'Check';
+  const raiseLabel = `${to >= maxTo ? 'All-in' : raiseWord === 'Bet' ? 'Bet' : 'Raise'} ${money(to)}`;
 
   return (
     <div className="relative flex flex-col gap-3">
@@ -105,15 +95,27 @@ export function ActionBar() {
         {myTurn ? (
           <motion.div key="act" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2.5">
             {minTo !== null && (
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-baseline justify-between font-mono text-[11px] tracking-[0.06em]">
-                  <label htmlFor="raise-to" className="text-ink-400">
-                    {raiseWord === 'Bet' ? 'BET' : 'RAISE TO'}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor="raise-to" className="font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
+                    {raiseWord === 'Bet' ? 'BET SIZE' : 'RAISE SIZE'}
                   </label>
-                  <span className="tabular text-ink-100">
-                    {bb(to)} <span className="text-ink-400">· {pct(potFrac)} POT</span>
-                  </span>
-                  <HintButton />
+                  <div className="flex gap-1">
+                    {PRESETS.map((p) => {
+                      const v = presetTo(p.frac);
+                      return (
+                        <button
+                          key={p.label}
+                          onClick={() => setTo(v)}
+                          className={`min-h-[30px] min-w-[44px] border px-2 font-mono text-[11px] uppercase transition ${
+                            v === to ? 'border-ink-100 text-ink-100' : 'border-ink-600 text-ink-400 hover:text-ink-100'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <input
                   id="raise-to"
@@ -125,31 +127,19 @@ export function ActionBar() {
                   value={to}
                   style={{ ['--fill' as string]: `${fill}%` }}
                   onChange={(e) => setTo(Number(e.target.value))}
+                  aria-label="Bet size"
                 />
-                <div className="ruler hidden sm:block" aria-hidden="true" />
-                <div className="hidden grid-cols-6 font-mono text-[11px] sm:grid">
-                  {PRESETS.map((p, i) => (
-                    <button
-                      key={p.label}
-                      onClick={() => setTo(presetTo(p.frac))}
-                      title={`${p.label} (${p.key})`}
-                      className={`min-h-[32px] uppercase text-ink-400 hover:text-ink-100 ${i === 0 ? 'text-left' : i === PRESETS.length - 1 ? 'text-right' : ''}`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
             <div className="grid grid-cols-3 gap-2">
               <button onClick={doFold} disabled={toCall === 0} title="Fold (F)" className="btn min-h-[50px] border border-ink-100 text-[15px] hover:bg-ink-800 sm:text-[16px]">
-                Fold <span className="kbd">F</span>
+                Fold
               </button>
               <button onClick={doCall} title="Check / call (C)" className="btn min-h-[50px] border border-ink-100 text-[15px] hover:bg-ink-800 sm:text-[16px]">
-                {toCallLabel} <span className="kbd">C</span>
+                {toCallLabel}
               </button>
               <button onClick={() => doRaise()} disabled={minTo === null} title="Bet / raise (R)" className="btn btn-gold min-h-[50px] text-[15px] sm:text-[16px]">
-                {raiseLabel} <span className="kbd">R</span>
+                {raiseLabel}
               </button>
             </div>
           </motion.div>
@@ -158,7 +148,7 @@ export function ActionBar() {
             {phase === 'over' ? <ResultLine /> : <WaitingText />}
             {(phase === 'idle' || phase === 'over') && (
               <button onClick={newHand} className="btn btn-gold ml-auto min-h-[52px] shrink-0 whitespace-nowrap px-5 text-[16px] sm:px-8">
-                {phase === 'idle' ? 'Deal' : 'Next hand'} <span className="kbd">SPACE</span>
+                {phase === 'idle' ? 'Deal' : 'Next hand'}
               </button>
             )}
           </motion.div>
@@ -170,7 +160,7 @@ export function ActionBar() {
 
 function WaitingText() {
   const phase = usePlay((s) => s.phase);
-  const label = phase === 'bot' ? 'NASH IS THINKING' : phase === 'over' ? 'HAND OVER' : phase === 'loading' ? 'LOADING' : phase === 'idle' ? 'READY' : '';
+  const label = phase === 'bot' ? 'OTTO IS THINKING' : phase === 'over' ? 'HAND OVER' : phase === 'loading' ? 'LOADING' : phase === 'idle' ? 'READY' : '';
   if (!label) return <div className="h-[18px]" />;
   return (
     <div className="flex min-h-[18px] items-center gap-3 font-mono text-[11px] tracking-[0.08em] text-ink-400">
@@ -184,51 +174,26 @@ function WaitingText() {
   );
 }
 
-const VERB: Record<string, string> = { f: 'fold', k: 'check', c: 'call', t: 'bet ⅓', h: 'bet ½', p: 'bet pot', a: 'all-in' };
-
-/** The solver's suggestion for this spot, on request. */
-function HintButton() {
-  const hint = usePlay((s) => s.hint);
-  const requestHint = usePlay((s) => s.requestHint);
-  const coach = usePlay((s) => s.settings.coach);
-  if (!coach) return null;
-  if (!hint)
-    return (
-      <button onClick={requestHint} className="ml-3 border border-dashed border-ink-500 px-2 py-0.5 text-ink-300 hover:border-ink-100 hover:text-ink-100">
-        HINT <span className="kbd">H</span>
-      </button>
-    );
-  const top = hint.codes
-    .map((c, i) => ({ c, p: hint.probs[i] }))
-    .filter((x) => x.p >= 0.12)
-    .sort((x, y) => y.p - x.p)
-    .slice(0, 2);
-  return (
-    <span className="ml-3 uppercase text-gold">
-      {top.map((x) => `${VERB[x.c]} ${pct(x.p)}`).join(' · ')}
-    </span>
-  );
-}
-
 /** How the hand ended, in one line. */
 function ResultLine() {
   const last = usePlay((s) => s.history[s.history.length - 1]);
   if (!last) return null;
   const won = last.net > 0;
-  const amt = Math.abs(last.net) / 100;
   const sub = last.showdown
     ? last.winner === 'split'
       ? (last.humanHand ?? '')
-      : won
-        ? `${last.humanHand} beats ${last.botHand}`
-        : `${last.botHand} beats ${last.humanHand}`
+      : last.humanHand === last.botHand
+        ? `${last.humanHand} vs ${last.humanHand?.toLowerCase()} · ${won ? 'yours' : "Otto's"} is higher`
+        : won
+          ? `${last.humanHand} beats ${last.botHand?.toLowerCase()}`
+          : `${last.botHand} beats ${last.humanHand?.toLowerCase()}`
     : won
-      ? 'Nash folded'
+      ? 'Otto folded'
       : 'You folded';
   return (
     <div className="flex items-baseline gap-3">
       <span className={`tabular font-mono text-[30px] font-bold leading-none ${won ? 'text-gold' : 'text-ink-100'}`}>
-        {last.winner === 'split' ? '±0' : `${won ? '+' : '−'}${amt % 1 === 0 ? amt.toFixed(0) : amt.toFixed(1)}`}
+        {signedMoney(last.net)}
       </span>
       <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-400">{sub}</span>
     </div>

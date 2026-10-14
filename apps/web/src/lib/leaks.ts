@@ -6,7 +6,7 @@ const ADVICE: Record<StatKey, { high: string; low: string }> = {
   pfr: { high: 'You raise preflop very often — make sure your raises aren’t predictable.', low: 'You rarely raise preflop. Raising takes the initiative and wins pots outright.' },
   sbOpen: { high: 'Your button opens are very wide.', low: 'Open-raise more from the button instead of limping or folding.' },
   limp: { high: 'You limp the button a lot — the bot isolates limps aggressively.', low: '' },
-  foldVsOpen: { high: 'You give up your big blind too easily — defend wider; you already have 1bb invested.', low: 'You defend the big blind very wide — fine, but play carefully out of position.' },
+  foldVsOpen: { high: 'You give up your big blind too easily — defend wider; you already have $2 invested.', low: 'You defend the big blind very wide — fine, but play carefully out of position.' },
   threeBet: { high: 'You 3-bet a lot; the bot will 4-bet and call lighter.', low: 'You rarely 3-bet. Re-raising some strong and some bluffing hands makes you harder to play against.' },
   foldTo3bet: { high: 'You fold to 3-bets too often — the bot will re-raise you light.', low: 'You almost never fold to 3-bets; the bot will value-bet you harder.' },
   cbet: { high: 'You c-bet almost every flop — the bot will float and raise more.', low: 'You check too many flops after raising preflop; you give up initiative.' },

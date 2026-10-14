@@ -5,11 +5,13 @@ import { PlayPage } from './pages/PlayPage';
 
 const ArenaPage = lazy(() => import('./pages/ArenaPage').then((m) => ({ default: m.ArenaPage })));
 const LabPage = lazy(() => import('./pages/LabPage').then((m) => ({ default: m.LabPage })));
+const StylePage = lazy(() => import('./pages/StylePage').then((m) => ({ default: m.StylePage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 
-type Route = 'play' | 'arena' | 'lab' | 'how';
+type Route = 'play' | 'you' | 'arena' | 'lab' | 'how';
 const ROUTES: Array<{ id: Route; label: string; short: string }> = [
   { id: 'play', label: 'Play', short: 'Play' },
+  { id: 'you', label: 'Your style', short: 'You' },
   { id: 'arena', label: 'Arena', short: 'Arena' },
   { id: 'lab', label: 'Lab', short: 'Lab' },
   { id: 'how', label: 'How', short: 'How' },
@@ -41,6 +43,7 @@ export function App() {
           <motion.main key={route} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             <Suspense fallback={<div className="p-10 text-center text-ink-400">Loading…</div>}>
               {route === 'play' && <PlayPage />}
+              {route === 'you' && <StylePage />}
               {route === 'arena' && <ArenaPage />}
               {route === 'lab' && <LabPage />}
               {route === 'how' && <AboutPage />}

@@ -26,17 +26,18 @@ A Monte Carlo CFR equilibrium blueprint, a Bayesian opponent model, and a PPO-tr
 | **Exploit layer** | A policy MLP outputs a bounded tilt Δ over four action groups; the final policy is `σ ∝ σ_GTO · exp(λΔ)`. Trained with **PPO**, an **asymmetric (privileged-information) critic**, **domain-randomised** opponent populations, and an L2 trust region to the blueprint. |
 | **Safety** | λ = 0 is exactly GTO; with no evidence the opponent features are exactly zero; optional profit-based **risk budget** (safe exploitation). |
 | **Explainability** | Gradient × input attribution turns every deviation into "*More big bets: 9% → 26% because you fold to bets 64% (GTO 41%)*". |
+| **Player cloning** | Fits a playable clone of a human from the opponent model's posteriors and stress-tests it against both bots to measure how exploitable their style is. |
 | **Evaluation** | **Duplicate** matches (seat-swapped replays of identical deals) with 95% CIs. |
 
 ## The demo
 
-- **Play** — a minimal drafting-table design (suit-coloured four-colour cards, numbered callouts for the bot's action, your price to call and your hand, keyboard shortcuts, phone layout). Choose a **Balanced** (pure GTO) or **Adaptive** opponent.
-  - **AI's thinking** — after each bot move, a plain-English account of whether it is playing balanced or adapting to you and which of your habits it's reacting to. Its odds and hand strength unlock when the hand ends; the raw probabilities, tilt and infoset sit under *Technical details*.
-  - **Your profile** — the archetype the AI reads you as, the habits it's confident about with advice, and a radar of your style vs balanced play.
-  - **Coach** — every decision is rated against the solver ("Great play", "the solver prefers to fold"), with an accuracy score and an "Ask the solver" hint.
-- **Arena** — the Adaptive and Balanced AIs play the *same* deals against any archetype (or a custom opponent you design with sliders) in a Web Worker; watch the curves separate and the bot's deviation from balanced play grow as evidence accumulates.
+- **Play** — heads-up against **Otto**, the AI, at $1/$2 with $200 stacks. Cards are dealt from the deck and turn over, bets slide into the pot, and the pot goes to the winner. Hover Otto to see why it made its last play; its hand unlocks when the hand ends. When the hand is over, each of your decisions gets a chess-style mark — **Brilliant**, **Best**, **Good**, **Inaccuracy**, **Mistake** or **Blunder** — and hovering one shows what the solver plays.
+- **Your style** — where you sit on a loose/tight × passive/aggressive map, the player type Otto reads you as, and the habits it is using against you. A **stress test** fits a clone of your style to Otto's read (a blend of the reference player types weighted by how well their measured statistics match yours) and plays it against the balanced blueprint and against Otto in a Web Worker, so you see how exploitable your style is in dollars per 100 hands.
+- **Arena** — Otto and the balanced blueprint play the *same* deals against any archetype (or a custom opponent you design with sliders); watch the curves separate as Otto's read sharpens.
 - **Strategy Lab** — 13×13 preflop range explorer across seven scenarios, and postflop strategy-by-hand-strength charts that show the polarised bet/check structure CFR discovers on its own.
 - **How it works** — architecture diagram, convergence and RL training curves, evaluation results and references.
+
+![Your style](docs/screenshots/style.png)
 
 ![Arena](docs/screenshots/arena.png)
 
