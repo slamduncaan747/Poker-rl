@@ -35,17 +35,29 @@ Run it locally with `npm install && npm run dev`.
 
 ## The demo
 
-- **Play** — heads-up against **Otto**, the AI, at $1/$2 with $200 stacks. Cards are dealt from the deck and turn over, bets slide into the pot, and the pot goes to the winner. Hover Otto to see why it made its last play; its hand unlocks when the hand ends. When the hand is over, each of your decisions gets a chess-style mark — **Brilliant**, **Best**, **Good**, **Inaccuracy**, **Mistake** or **Blunder** — and hovering one shows what the solver plays.
-- **Your style** — where you sit on a loose/tight × passive/aggressive map, the player type Otto reads you as, and the habits it is using against you. A **stress test** fits a clone of your style to Otto's read (a blend of the reference player types weighted by how well their measured statistics match yours) and plays it against the balanced blueprint and against Otto in a Web Worker, so you see how exploitable your style is in dollars per 100 hands.
-- **Arena** — Otto and the balanced blueprint play the *same* deals against any archetype (or a custom opponent you design with sliders); watch the curves separate as Otto's read sharpens.
-- **Strategy Lab** — 13×13 preflop range explorer across seven scenarios, and postflop strategy-by-hand-strength charts that show the polarised bet/check structure CFR discovers on its own.
-- **How it works** — architecture diagram, convergence and RL training curves, evaluation results and references.
+- **Play** — heads-up against **Otto** at $1/$2 with $200 stacks. Hover Otto to see why it made its last play; its hand unlocks when the hand ends. After each hand, every decision you made gets a chess-style mark (**Brilliant**, **Best**, **Good**, **Inaccuracy**, **Mistake**, **Blunder**); hover one to see what the solver plays.
+- **Your style** — where you sit among player types, the habits Otto is using against you, and a **stress test**: a clone of your style is fitted from Otto's read and played against both bots in a Web Worker to show how exploitable you are. *See everything Otto knows about you* opens the full profile and a hand-by-hand log of how each hand moved its estimates. No hands yet? *Preview with a sample player*.
+- **Arena** — Otto and the balanced AI play the same deals against a chosen player type; the gap between the curves is what adapting is worth.
+- **How it works** — a research write-up: method, training statistics, and the experiments below.
 
 ![Your style](docs/screenshots/style.png)
 
 ![Arena](docs/screenshots/arena.png)
 
-![Strategy Lab](docs/screenshots/lab.png)
+## Embedding
+
+Otto is built to sit as a section of a larger site. Embed it in an iframe with `?embed`; it drops the full-page chrome and credits, leaves the host's scroll alone, and posts its content height so the frame can size itself:
+
+```html
+<iframe id="otto" src="https://slamduncaan747.github.io/Poker-rl/?embed#play" style="width:100%;border:0" title="Otto"></iframe>
+<script>
+  addEventListener('message', (e) => {
+    if (e.data?.type === 'otto:height') document.getElementById('otto').style.height = e.data.height + 'px';
+  });
+</script>
+```
+
+Routes: `#play`, `#you`, `#arena`, `#how`.
 
 ## Results
 
@@ -65,6 +77,13 @@ Win rates in **big blinds per 100 hands** (95% CI), duplicate format, 30,000 han
 - The blueprint (66M MCCFR iterations, 39,795 infosets) already beats every archetype.
 - The RL layer (4.7M training hands) multiplies those win rates by 2–7× against every leaky style, with non-overlapping intervals.
 - Against the blueprint itself it breaks even, so it doesn't invent leaks that aren't there.
+
+Further experiments (`npm run research`, fixed seeds; results in `apps/web/src/data/research.json`):
+
+- **Reading players** — Otto names the right player type in 86% of sessions after 20 hands and 100% from 160 hands (140 sessions).
+- **Unseen opponents** — against 40 randomly generated opponents not used in training, adapting won more in 39 of 40, by +104 ± 43 bb/100.
+- **Clone fidelity** — clones fitted from 150 observed hands reproduce the original's habits to within 3.7 percentage points; predicted vs. actual exploitability correlate at r = 0.89 (19 players).
+- **Speed** — 6.7M seven-card evaluations/s and 2,743 full Otto-vs-balanced hands/s on one thread.
 
 ## Fair play
 
@@ -125,6 +144,7 @@ npm run build:artifact -w apps/web   # single-file build (inline JS/CSS, blob wo
 ```bash
 npm run train:blueprint -- --minutes 70 --workers 3 --buckets 32   # → apps/web/public/models/blueprint.json
 npm run train:exploit   -- --minutes 45 --workers 4 --evalDeals 15000   # → apps/web/public/models/exploit.json
+npm run research    # → apps/web/src/data/research.json (every number in the write-up)
 ```
 
 `train:exploit` also measures equilibrium baseline frequencies (blueprint self-play), archetype signatures, and runs the duplicate evaluation shown above.

@@ -15,7 +15,7 @@
     "typecheck": "tsc -p packages/engine && tsc -p packages/training && tsc -p apps/web",
     "train:blueprint": "tsx packages/training/src/trainBlueprint.ts",
     "train:exploit": "tsx packages/training/src/trainExploit.ts",
-    "evaluate": "tsx packages/training/src/evaluate.ts"
+    "research": "tsx packages/training/src/research.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

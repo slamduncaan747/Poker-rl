@@ -30,7 +30,7 @@ export type ArenaOpponent = { kind: 'style'; style: Style } | { kind: 'gto' };
 
 export type ArenaIn =
   | { type: 'init'; blueprintUrl: string; exploitUrl: string }
-  | { type: 'start'; opponent: ArenaOpponent; hands: number; turbo: boolean; seed: number; lambda: number; pace?: { batch: number; delay: number } }
+  | { type: 'start'; opponent: ArenaOpponent; hands: number; turbo: boolean; seed: number; lambda: number }
   | { type: 'stop' }
   | { type: 'turbo'; turbo: boolean };
 
@@ -78,7 +78,6 @@ let exploitFile: ExploitModelFile | null = null;
 let actor: MLP | null = null;
 let runId = 0;
 let turbo = true;
-let pace: { batch: number; delay: number } | null = null;
 
 const post = (m: ArenaOut) => (self as unknown as Worker).postMessage(m);
 
@@ -97,7 +96,6 @@ self.onmessage = async (e: MessageEvent<ArenaIn>) => {
       turbo = m.turbo;
     } else if (m.type === 'start') {
       turbo = m.turbo;
-      pace = m.pace ?? null;
       void run(++runId, m.opponent, m.hands, m.seed, m.lambda);
     }
   } catch (err) {
@@ -141,7 +139,7 @@ async function run(id: number, opponent: ArenaOpponent, total: number, seed: num
       return d;
     };
   }
-  const batch = () => (pace ? pace.batch : turbo ? 40 : 1);
+  const batch = () => (turbo ? 40 : 1);
 
   for (let h = 0; h < total; ) {
     if (id !== runId) return;
@@ -200,6 +198,6 @@ async function run(id: number, opponent: ArenaOpponent, total: number, seed: num
     });
     ticks = [];
     // yield so stop/turbo messages are processed; in watch mode pace the hands
-    await new Promise((r) => setTimeout(r, pace ? pace.delay : turbo ? 0 : 160));
+    await new Promise((r) => setTimeout(r, turbo ? 0 : 160));
   }
 }

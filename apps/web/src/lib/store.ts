@@ -8,6 +8,8 @@ import {
   HUNLState,
   type StrategyLookup,
   OpponentModel,
+  STAT_KEYS,
+  type StatKey,
   CryptoRng,
   describeHand,
   equityVsRandom,
@@ -48,6 +50,17 @@ export interface HandSummary {
   grades: Grade[];
   pot: number;
   modelHands: number;
+  /** what Otto learned about you from this hand: each habit it updated, how often it applied, and its estimate before and after */
+  observed: Observation[];
+}
+
+export interface Observation {
+  key: StatKey;
+  /** times the situation came up this hand, and how many of those you did it */
+  opps: number;
+  hits: number;
+  before: number;
+  after: number;
 }
 
 export interface Settings {
@@ -161,7 +174,15 @@ export const usePlay = create<PlayStore>((set, get) => {
   const finishHand = () => {
     const { state, bot, botDecisions, humanGrades, handNo, history } = get();
     if (!state || !bot) return;
+    const before = Object.fromEntries(STAT_KEYS.map((k) => [k, { ...bot.model.counters[k], mean: bot.model.mean(k) }]));
     bot.endHand(state, BOT);
+    const observed: Observation[] = STAT_KEYS.filter((k) => bot.model.counters[k].opps > before[k].opps).map((k) => ({
+      key: k,
+      opps: bot.model.counters[k].opps - before[k].opps,
+      hits: bot.model.counters[k].hits - before[k].hits,
+      before: before[k].mean,
+      after: bot.model.mean(k),
+    }));
     const pay = state.payoffs();
     const w = state.winner();
     const showdown = state.isShowdown;
@@ -182,6 +203,7 @@ export const usePlay = create<PlayStore>((set, get) => {
       grades: humanGrades,
       pot: state.pot,
       modelHands: bot.model.hands,
+      observed,
     };
     set({ phase: 'over', history: [...history, summary] });
     setTimeout(() => (pay[HUMAN] > 0 ? sfx.win() : pay[HUMAN] < 0 ? sfx.lose() : undefined), showdown ? 700 : 200);

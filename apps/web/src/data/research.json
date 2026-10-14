@@ -1,0 +1,447 @@
+{
+ "generatedAt": "2026-10-14T14:20:37.879Z",
+ "identification": {
+  "types": 7,
+  "sessions": 140,
+  "points": [
+   {
+    "hands": 5,
+    "accuracy": 0.49,
+    "prob": 0.33
+   },
+   {
+    "hands": 10,
+    "accuracy": 0.64,
+    "prob": 0.46
+   },
+   {
+    "hands": 20,
+    "accuracy": 0.86,
+    "prob": 0.64
+   },
+   {
+    "hands": 40,
+    "accuracy": 0.93,
+    "prob": 0.84
+   },
+   {
+    "hands": 80,
+    "accuracy": 0.97,
+    "prob": 0.94
+   },
+   {
+    "hands": 160,
+    "accuracy": 1,
+    "prob": 1
+   },
+   {
+    "hands": 320,
+    "accuracy": 1,
+    "prob": 1
+   }
+  ]
+ },
+ "learningCurve": {
+  "sessions": 56,
+  "points": [
+   {
+    "from": 0,
+    "to": 25,
+    "gain": 94.42,
+    "se": 33.81
+   },
+   {
+    "from": 25,
+    "to": 50,
+    "gain": 87.3,
+    "se": 31.6
+   },
+   {
+    "from": 50,
+    "to": 100,
+    "gain": 116.61,
+    "se": 32.5
+   },
+   {
+    "from": 100,
+    "to": 200,
+    "gain": 95.35,
+    "se": 19.65
+   },
+   {
+    "from": 200,
+    "to": 400,
+    "gain": 103.73,
+    "se": 16.25
+   }
+  ]
+ },
+ "generalisation": {
+  "opponents": 40,
+  "deals": 1000,
+  "wins": 39,
+  "meanGain": 103.56,
+  "seGain": 22.12,
+  "rows": [
+   {
+    "name": "LAG Aggro × Calling Station",
+    "otto": 142.22,
+    "gto": 10.36
+   },
+   {
+    "name": "Nit × Calling Station",
+    "otto": 82.33,
+    "gto": 9.08
+   },
+   {
+    "name": "Scared Money × Passive Fish",
+    "otto": 89.07,
+    "gto": 19.36
+   },
+   {
+    "name": "Maniac × LAG Aggro",
+    "otto": 179.82,
+    "gto": 47.64
+   },
+   {
+    "name": "Calling Station × Scared Money",
+    "otto": 192.14,
+    "gto": 34.19
+   },
+   {
+    "name": "LAG Aggro × Nit",
+    "otto": 74.39,
+    "gto": -13
+   },
+   {
+    "name": "Calling Station × LAG Aggro",
+    "otto": 449.17,
+    "gto": 117.35
+   },
+   {
+    "name": "Calling Station × Maniac",
+    "otto": 293.43,
+    "gto": 98.3
+   },
+   {
+    "name": "TAG Regular × Nit",
+    "otto": 72.1,
+    "gto": 28.42
+   },
+   {
+    "name": "Nit × TAG Regular",
+    "otto": 47.56,
+    "gto": 35.81
+   },
+   {
+    "name": "Calling Station × LAG Aggro",
+    "otto": 245.83,
+    "gto": 63.31
+   },
+   {
+    "name": "Calling Station × Maniac",
+    "otto": 487.77,
+    "gto": 63.36
+   },
+   {
+    "name": "LAG Aggro × LAG Aggro",
+    "otto": 89.66,
+    "gto": 53.57
+   },
+   {
+    "name": "TAG Regular × Calling Station",
+    "otto": 51.46,
+    "gto": 24.54
+   },
+   {
+    "name": "Scared Money × LAG Aggro",
+    "otto": 55.16,
+    "gto": 14.39
+   },
+   {
+    "name": "Scared Money × Passive Fish",
+    "otto": 44.94,
+    "gto": 32.07
+   },
+   {
+    "name": "Maniac × Nit",
+    "otto": 71.28,
+    "gto": 4.25
+   },
+   {
+    "name": "Calling Station × Passive Fish",
+    "otto": 586.6,
+    "gto": 82.55
+   },
+   {
+    "name": "LAG Aggro × Scared Money",
+    "otto": 68.49,
+    "gto": 11.63
+   },
+   {
+    "name": "TAG Regular × Scared Money",
+    "otto": 78.57,
+    "gto": 19.96
+   },
+   {
+    "name": "Passive Fish × TAG Regular",
+    "otto": 134.57,
+    "gto": -6.2
+   },
+   {
+    "name": "Passive Fish × Passive Fish",
+    "otto": 113.84,
+    "gto": 11.17
+   },
+   {
+    "name": "Scared Money × TAG Regular",
+    "otto": 50.09,
+    "gto": 27.54
+   },
+   {
+    "name": "TAG Regular × Scared Money",
+    "otto": 54.84,
+    "gto": 25.13
+   },
+   {
+    "name": "Calling Station × LAG Aggro",
+    "otto": 728.07,
+    "gto": 107.88
+   },
+   {
+    "name": "Calling Station × Nit",
+    "otto": -7.95,
+    "gto": 9.58
+   },
+   {
+    "name": "Maniac × Maniac",
+    "otto": 262.42,
+    "gto": 40.15
+   },
+   {
+    "name": "TAG Regular × LAG Aggro",
+    "otto": 56.8,
+    "gto": 28.79
+   },
+   {
+    "name": "TAG Regular × Nit",
+    "otto": 26.97,
+    "gto": 14.4
+   },
+   {
+    "name": "Scared Money × Scared Money",
+    "otto": 56.66,
+    "gto": 23.59
+   },
+   {
+    "name": "LAG Aggro × LAG Aggro",
+    "otto": 77.41,
+    "gto": 43.45
+   },
+   {
+    "name": "TAG Regular × Maniac",
+    "otto": 61.47,
+    "gto": 47.65
+   },
+   {
+    "name": "Nit × Nit",
+    "otto": 67.97,
+    "gto": 43.18
+   },
+   {
+    "name": "TAG Regular × LAG Aggro",
+    "otto": 58,
+    "gto": 18.47
+   },
+   {
+    "name": "Maniac × Passive Fish",
+    "otto": 119.23,
+    "gto": 103.14
+   },
+   {
+    "name": "Scared Money × TAG Regular",
+    "otto": 14.82,
+    "gto": 8.72
+   },
+   {
+    "name": "Nit × Maniac",
+    "otto": 70.63,
+    "gto": 37.13
+   },
+   {
+    "name": "Calling Station × TAG Regular",
+    "otto": 129.53,
+    "gto": 55.02
+   },
+   {
+    "name": "LAG Aggro × Nit",
+    "otto": 83.62,
+    "gto": 28.41
+   },
+   {
+    "name": "LAG Aggro × Nit",
+    "otto": 39.71,
+    "gto": 33.93
+   }
+  ]
+ },
+ "cloneFidelity": {
+  "subjects": 19,
+  "readHands": 150,
+  "identified": 7,
+  "identifiable": 7,
+  "meanStatError": 3.74,
+  "correlation": 0.89,
+  "rows": [
+   {
+    "id": "station",
+    "identified": true,
+    "statError": 1.37,
+    "actual": 385.01,
+    "predicted": 348.22
+   },
+   {
+    "id": "maniac",
+    "identified": true,
+    "statError": 4.52,
+    "actual": 385.2,
+    "predicted": 198.14
+   },
+   {
+    "id": "nit",
+    "identified": true,
+    "statError": 5.34,
+    "actual": 48.27,
+    "predicted": 70.73
+   },
+   {
+    "id": "tag",
+    "identified": true,
+    "statError": 3.72,
+    "actual": 35.24,
+    "predicted": 34.61
+   },
+   {
+    "id": "lag",
+    "identified": true,
+    "statError": 3.52,
+    "actual": 80.74,
+    "predicted": 65.14
+   },
+   {
+    "id": "scared",
+    "identified": true,
+    "statError": 3.35,
+    "actual": 42.57,
+    "predicted": 46.45
+   },
+   {
+    "id": "fish",
+    "identified": true,
+    "statError": 1.44,
+    "actual": 144.97,
+    "predicted": 135.44
+   },
+   {
+    "id": "random-0",
+    "identified": null,
+    "statError": 3.73,
+    "actual": 148.43,
+    "predicted": 82.76
+   },
+   {
+    "id": "random-1",
+    "identified": null,
+    "statError": 4.06,
+    "actual": 329.52,
+    "predicted": 230.71
+   },
+   {
+    "id": "random-2",
+    "identified": null,
+    "statError": 3.42,
+    "actual": 52.45,
+    "predicted": 67.63
+   },
+   {
+    "id": "random-3",
+    "identified": null,
+    "statError": 3.91,
+    "actual": 51.66,
+    "predicted": 54.58
+   },
+   {
+    "id": "random-4",
+    "identified": null,
+    "statError": 3.23,
+    "actual": 405.18,
+    "predicted": 284.67
+   },
+   {
+    "id": "random-5",
+    "identified": null,
+    "statError": 4.52,
+    "actual": 46.45,
+    "predicted": 64.25
+   },
+   {
+    "id": "random-6",
+    "identified": null,
+    "statError": 1.37,
+    "actual": 262.98,
+    "predicted": 162.2
+   },
+   {
+    "id": "random-7",
+    "identified": null,
+    "statError": 2.61,
+    "actual": 46.79,
+    "predicted": 69.71
+   },
+   {
+    "id": "random-8",
+    "identified": null,
+    "statError": 5.68,
+    "actual": 106.85,
+    "predicted": 138.83
+   },
+   {
+    "id": "random-9",
+    "identified": null,
+    "statError": 7.7,
+    "actual": 54.09,
+    "predicted": 127.69
+   },
+   {
+    "id": "random-10",
+    "identified": null,
+    "statError": 5.21,
+    "actual": 47.83,
+    "predicted": 32.97
+   },
+   {
+    "id": "random-11",
+    "identified": null,
+    "statError": 2.41,
+    "actual": 152,
+    "predicted": 217.08
+   }
+  ]
+ },
+ "performance": {
+  "evalsPerSec": 6677140,
+  "equitySamplesPerSec": 2789236,
+  "handsPerSec": 2743,
+  "loc": {
+   "engine": 2906,
+   "training": 925,
+   "web": 3861,
+   "tests": 492
+  },
+  "tests": 33,
+  "modelKB": {
+   "blueprint": 253,
+   "exploit": 36
+  }
+ }
+}

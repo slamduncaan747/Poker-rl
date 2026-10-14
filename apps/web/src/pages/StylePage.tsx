@@ -1,6 +1,7 @@
 import { AIAgent, ARCHETYPES, type ArchetypeSignature, type OpponentSnapshot, OpponentModel, Rng, type StatKey, StyleAgent, TRAINING_SAMPLING, accuracy, matchArchetypes, playHand, randomDeal } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { Evidence } from '../components/brain/Evidence';
 import { MarkIcon } from '../components/brain/HandReview';
 import { pct, per100, signedMoney } from '../lib/format';
 import { findLeaks } from '../lib/leaks';
@@ -111,6 +112,11 @@ export function StylePage() {
         <section>
           <h2 className="eyebrow mb-3">What Otto noticed</h2>
           {ready ? <Noticed snap={snap} /> : <Locked text="Nothing yet" />}
+          {!sample && n > 0 && (
+            <div className="mt-4">
+              <Evidence snap={snap} history={history} />
+            </div>
+          )}
         </section>
         {!sample && (
           <section>
@@ -229,15 +235,10 @@ function StressTest({ snap, cacheKey, whose }: { snap: OpponentSnapshot; cacheKe
   const ottoWins = p ? p.otto * 100 : 0;
   const verdict = !p ? null : ottoWins < 10 ? { text: 'Hard to exploit', color: MARKS.Best.color } : ottoWins < 40 ? { text: 'Exploitable', color: MARKS.Inaccuracy.color } : { text: 'Very exploitable', color: MARKS.Blunder.color };
   const scale = you ? Math.max(0.3, Math.abs(you.gto), Math.abs(you.otto)) * 1.15 : 1;
-  const mix = p?.weights
-    .filter((w) => w.weight >= 0.1)
-    .sort((a, b) => b.weight - a.weight)
-    .map((w) => `${pct(w.weight)} ${STYLES[w.id]?.short ?? w.name}`)
-    .join(' · ');
 
   return (
     <div className="border border-ink-600 p-5">
-      <div className="flex min-h-[40px] items-baseline justify-between gap-3">
+      <div className="flex min-h-[34px] items-baseline justify-between gap-3">
         <AnimatePresence mode="wait">
           {verdict && p?.finished ? (
             <motion.div key="v" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-[28px] font-extrabold leading-none" style={{ color: verdict.color }}>
@@ -245,34 +246,34 @@ function StressTest({ snap, cacheKey, whose }: { snap: OpponentSnapshot; cacheKe
             </motion.div>
           ) : (
             <motion.div key="r" exit={{ opacity: 0 }} className="font-mono text-[11px] tracking-[0.08em] text-ink-400">
-              SIMULATING {p ? `${(p.done * 4).toLocaleString()} HANDS` : '…'}
+              SIMULATING…
             </motion.div>
           )}
         </AnimatePresence>
-        <button onClick={run} disabled={running} className="font-mono text-[11px] tracking-[0.08em] text-ink-400 hover:text-ink-100 disabled:opacity-40">
-          RUN AGAIN
-        </button>
       </div>
-      <p className="mt-2 text-[14px] text-ink-400">A clone of {whose} style played {(SIM_HANDS * 2).toLocaleString()} hands against each bot.</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-ink-300">
+        A copy of {whose} style played {(SIM_HANDS * 2).toLocaleString()} hands against each AI. Here is what {whose === 'your' ? 'you' : 'they'} would lose.
+      </p>
 
       <div className="mt-5 flex flex-col gap-4">
-        <ResultRow label="Vs balanced bot" value={you?.gto} se={p?.gtoSE} scale={scale} />
-        <ResultRow label="Vs Otto, adapting" value={you?.otto} se={p?.ottoSE} scale={scale} accent />
+        <ResultRow label="Against a balanced AI" value={you?.gto} scale={scale} />
+        <ResultRow label="Against Otto" value={you?.otto} scale={scale} accent />
       </div>
 
       <div className="mt-5 h-[2px] bg-ink-700">
         <motion.div className="h-full bg-ink-300" animate={{ width: `${p ? (p.done / p.total) * 100 : 0}%` }} transition={{ duration: 0.2 }} />
       </div>
-      <div className="mt-2 flex flex-wrap justify-between gap-2 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-500">
-        <span>Clone: {mix ?? '…'}</span>
-        {p?.finished && <span>Otto gains {per100(p.otto - p.gto)} / 100 by adapting</span>}
-      </div>
+      {p?.finished && (
+        <button onClick={run} className="mt-3 font-mono text-[11px] tracking-[0.08em] text-ink-500 hover:text-ink-100">
+          RUN AGAIN
+        </button>
+      )}
     </div>
   );
 }
 
 /** Your result per 100 hands as a bar from a centre line: losses left, wins right. */
-function ResultRow({ label, value, se, scale, accent }: { label: string; value?: number; se?: number; scale: number; accent?: boolean }) {
+function ResultRow({ label, value, scale, accent }: { label: string; value?: number; scale: number; accent?: boolean }) {
   const w = value === undefined ? 0 : (Math.abs(value) / scale) * 50;
   const lose = (value ?? 0) < 0;
   return (
@@ -293,87 +294,68 @@ function ResultRow({ label, value, se, scale, accent }: { label: string; value?:
           transition={{ type: 'spring', stiffness: 160, damping: 24 }}
         />
       </div>
-      {se !== undefined && value !== undefined && <div className="mt-1 text-right font-mono text-[10px] text-ink-500">±{per100(1.96 * se).replace(/^[+−]/, '')}</div>}
     </div>
   );
 }
 
 /** The habits Otto is using against you, biggest first. */
 function Noticed({ snap }: { snap: OpponentSnapshot }) {
-  const [all, setAll] = useState(false);
-  const leaks = findLeaks(snap);
-  const leakKeys = new Set(leaks.map((l) => l.key));
-  const rows = all ? snap.stats.filter((s) => s.opps >= 3 && HABIT[s.key]).sort((a, b) => Number(leakKeys.has(b.key)) - Number(leakKeys.has(a.key))) : snap.stats.filter((s) => leakKeys.has(s.key)).sort((a, b) => Math.abs(b.mean - b.baseline) - Math.abs(a.mean - a.baseline)).slice(0, 4);
+  const leaks = findLeaks(snap).slice(0, 3);
+  if (leaks.length === 0) return <p className="text-[15px] text-ink-300">No clear habits yet — so far you look balanced.</p>;
   return (
-    <div>
-      {rows.length === 0 ? (
-        <p className="border border-ink-600 p-4 text-[15px] text-ink-300">No clear habits yet — you look balanced so far.</p>
-      ) : (
-        <div className="flex flex-col border border-ink-600">
-          {rows.map((s, i) => {
-            const leak = leaks.find((l) => l.key === s.key);
-            return (
-              <div key={s.key} className={`px-4 py-3.5 ${i ? 'border-t border-ink-700' : ''}`}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[15px]">{HABIT[s.key]}</span>
-                  <span className="tabular font-mono text-[12px]">
-                    <span className={leak ? 'text-gold' : 'text-ink-100'}>{pct(s.mean)}</span>
-                    <span className="text-ink-500"> · typical {pct(s.baseline)}</span>
-                  </span>
-                </div>
-                <div className="relative mt-2.5 h-2.5" aria-hidden="true">
-                  <span className="absolute inset-x-0 top-1/2 h-px bg-ink-600" />
-                  <span className="absolute inset-y-0 w-px bg-ink-100" style={{ left: `${s.baseline * 100}%` }} />
-                  <motion.span
-                    className={`absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${leak ? 'bg-gold' : 'bg-ink-300'}`}
-                    initial={{ left: `${s.baseline * 100}%` }}
-                    animate={{ left: `${s.mean * 100}%` }}
-                    transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-                  />
-                </div>
-                {leak && <p className="mt-2.5 text-[13.5px] leading-snug text-ink-300">{voice(leak.advice)}</p>}
-              </div>
-            );
-          })}
+    <div className="flex flex-col border-t border-ink-700">
+      {leaks.map((leak) => (
+        <div key={leak.key} className="border-b border-ink-700 py-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-[15px] font-bold">{HABIT[leak.key]}</span>
+            <span className="tabular font-mono text-[12px]">
+              <span className="text-gold">{pct(leak.mean)}</span>
+              <span className="text-ink-500"> · typical {pct(leak.baseline)}</span>
+            </span>
+          </div>
+          <div className="relative mt-2.5 h-2.5" aria-hidden="true">
+            <span className="absolute inset-x-0 top-1/2 h-px bg-ink-600" />
+            <span className="absolute inset-y-0 w-px bg-ink-100" style={{ left: `${leak.baseline * 100}%` }} />
+            <motion.span
+              className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold"
+              initial={{ left: `${leak.baseline * 100}%` }}
+              animate={{ left: `${leak.mean * 100}%` }}
+              transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+            />
+          </div>
+          <p className="mt-2.5 text-[14px] leading-snug text-ink-400">{voice(leak.advice)}</p>
         </div>
-      )}
-      <button onClick={() => setAll((v) => !v)} className="mt-2 font-mono text-[11px] tracking-[0.08em] text-ink-400 hover:text-ink-100">
-        {all ? 'SHOW LESS' : 'ALL HABITS'}
-      </button>
+      ))}
     </div>
   );
 }
 
 const MARK_ORDER: Mark[] = ['Brilliant', 'Best', 'Good', 'Inaccuracy', 'Mistake', 'Blunder'];
 
-/** Session result, accuracy, and how many of each mark you earned. */
+/** Hands, result and accuracy, then how many of each mark you earned. */
 function Decisions({ history }: { history: ReturnType<typeof usePlay.getState>['history'] }) {
   const grades = history.flatMap((h) => h.grades);
   const net = history.reduce((a, h) => a + h.net, 0);
   const counts = new Map<Mark, number>();
   for (const g of grades) counts.set(markOf(g), (counts.get(markOf(g)) ?? 0) + 1);
-  const max = Math.max(1, ...counts.values());
   return (
-    <div className="border border-ink-600 p-5">
-      <div className="grid grid-cols-3">
+    <div>
+      <div className="grid grid-cols-3 gap-4">
         <Stat label="Hands" value={String(history.length)} />
         <Stat label="Result" value={signedMoney(net)} gold={net > 0} />
         <Stat label="Accuracy" value={grades.length ? accuracy(grades).toFixed(0) : '—'} />
       </div>
-      <div className="mt-5 flex flex-col gap-2">
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
         {MARK_ORDER.map((mk) => {
           const c = counts.get(mk) ?? 0;
           return (
-            <div key={mk} className="grid grid-cols-[22px_92px_1fr_28px] items-center gap-3">
+            <span key={mk} className={`flex items-center gap-2 text-[13px] ${c ? '' : 'opacity-40'}`} title={MARKS[mk].text}>
               <MarkIcon mark={mk} size={20} />
-              <span className="text-[13px]" style={{ color: c ? MARKS[mk].color : 'var(--color-ink-500)' }}>
-                {MARKS[mk].text}
+              <span className="tabular font-mono" style={{ color: MARKS[mk].color }}>
+                {c}
               </span>
-              <span className="h-2 bg-ink-850">
-                <motion.span className="block h-full" style={{ background: MARKS[mk].color }} initial={{ width: 0 }} animate={{ width: `${(c / max) * 100}%` }} />
-              </span>
-              <span className="tabular text-right font-mono text-[12px] text-ink-300">{c}</span>
-            </div>
+              <span className="text-ink-400">{MARKS[mk].text}</span>
+            </span>
           );
         })}
       </div>

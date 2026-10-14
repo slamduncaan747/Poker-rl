@@ -35,17 +35,3 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
     </div>
   );
 }
-
-export function Panel({ title, right, children, className = '' }: { title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
-  return (
-    <section className={`glass p-4 sm:p-5 ${className}`}>
-      {(title || right) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          {title && <h3 className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-300">{title}</h3>}
-          {right}
-        </div>
-      )}
-      {children}
-    </section>
-  );
-}

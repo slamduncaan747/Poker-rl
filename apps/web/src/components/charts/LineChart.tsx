@@ -84,7 +84,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
   const sx = (x: number) => pad.l + ((tx(x) - x0) / (x1 - x0)) * (W - pad.l - pad.r);
   const sy = (y: number) => pad.t + (1 - (y - y0) / (y1 - y0)) * (H - pad.t - pad.b);
   const yTicks = niceTicks(y0, y1, 4);
-  const xTicks = logX ? [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8].filter((v) => tx(v) >= x0 && tx(v) <= x1) : niceTicks(x0, x1, 5);
+  const xTicks = logX ? [1, 2, 5, 10, 20, 50, 100, 200, 500, 1e3, 2e3, 5e3, 1e4, 1e5, 1e6].filter((v) => tx(v) >= x0 - 1e-9 && tx(v) <= x1 + 1e-9) : niceTicks(x0, x1, 5);
 
   const longest = series.reduce((a, s) => (s.points.length > a.length ? s.points : a), [] as Array<[number, number]>);
 
@@ -138,7 +138,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
         ))}
         {zeroLine && y0 < 0 && y1 > 0 && <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="#5a5f66" />}
         {xTicks.filter((t, i, a) => i === 0 || formatX(logX ? a[i - 1] : a[i - 1]) !== formatX(logX ? t : t)).map((t) => (
-          <text key={t} x={sx(logX ? 10 ** t : t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#8c929a" fontFamily="var(--font-mono)" className="tabular">
+          <text key={t} x={sx(t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#8c929a" fontFamily="var(--font-mono)" className="tabular">
             {formatX(logX ? t : t)}
           </text>
         ))}

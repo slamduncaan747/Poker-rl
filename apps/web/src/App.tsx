@@ -2,26 +2,24 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { usePlay } from './lib/store';
 import { OttoFace } from './components/table/Otto';
-import { HomePage } from './pages/HomePage';
+import { embedded, useReportHeight } from './lib/embed';
 import { PlayPage } from './pages/PlayPage';
 
 const ArenaPage = lazy(() => import('./pages/ArenaPage').then((m) => ({ default: m.ArenaPage })));
-const LabPage = lazy(() => import('./pages/LabPage').then((m) => ({ default: m.LabPage })));
 const StylePage = lazy(() => import('./pages/StylePage').then((m) => ({ default: m.StylePage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 
-type Route = 'home' | 'play' | 'you' | 'arena' | 'lab' | 'how';
+type Route = 'play' | 'you' | 'arena' | 'how';
 const ROUTES: Array<{ id: Route; label: string; short: string }> = [
   { id: 'play', label: 'Play', short: 'Play' },
   { id: 'you', label: 'Your style', short: 'You' },
   { id: 'arena', label: 'Arena', short: 'Arena' },
-  { id: 'lab', label: 'Lab', short: 'Lab' },
   { id: 'how', label: 'How it works', short: 'How' },
 ];
 
 function readRoute(): Route {
   const h = window.location.hash.replace('#', '') as Route;
-  return ROUTES.some((r) => r.id === h) ? h : 'home';
+  return ROUTES.some((r) => r.id === h) ? h : 'play';
 }
 
 export function App() {
@@ -32,20 +30,19 @@ export function App() {
     void init();
     const onHash = () => {
       setRoute(readRoute());
-      window.scrollTo(0, 0);
+      // inside a host page, leave the host's scroll position alone
+      if (!embedded) window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, [init]);
 
+  useReportHeight();
+
   return (
-    <div className="app-bg min-h-screen">
+    <div className={`app-bg ${embedded ? '' : 'min-h-screen'}`}>
       <Header route={route} />
-      {route === 'home' ? (
-        <motion.main key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-          <HomePage />
-        </motion.main>
-      ) : phase === 'loading' || phase === 'error' ? (
+      {phase === 'loading' || phase === 'error' ? (
         <Loading />
       ) : (
         <AnimatePresence mode="wait">
@@ -54,7 +51,6 @@ export function App() {
               {route === 'play' && <PlayPage />}
               {route === 'you' && <StylePage />}
               {route === 'arena' && <ArenaPage />}
-              {route === 'lab' && <LabPage />}
               {route === 'how' && <AboutPage />}
             </Suspense>
           </motion.main>
@@ -66,9 +62,9 @@ export function App() {
 
 function Header({ route }: { route: Route }) {
   return (
-    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className="sticky z-30 border-b border-ink-600 bg-ink-950">
+    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className={`${embedded ? '' : 'sticky'} z-30 border-b border-ink-600 bg-ink-950`}>
       <div className="mx-auto flex h-[54px] max-w-[1400px] items-center gap-4 px-4 lg:px-6">
-        <a href="#" className="flex items-center gap-2.5 whitespace-nowrap text-[17px] font-extrabold text-ink-100" aria-label="Otto home">
+        <a href="#play" className="flex items-center gap-2.5 whitespace-nowrap text-[17px] font-extrabold text-ink-100" aria-label="Otto">
           <OttoFace mood="idle" size={26} />
           <span className="hidden sm:inline">Otto</span>
         </a>
