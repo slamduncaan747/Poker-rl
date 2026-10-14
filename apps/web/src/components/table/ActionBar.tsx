@@ -1,8 +1,10 @@
-import { type Code, raiseToForFraction } from '@poker-rl/engine';
+import { type Code, DEFAULT_CONFIG, raiseToForFraction } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { money, signedMoney } from '../../lib/format';
 import { HUMAN, usePlay } from '../../lib/store';
+
+const BUY_IN = DEFAULT_CONFIG.startingStack;
 
 const PRESETS: Array<{ label: string; key: string; frac: number | 'min' | 'all' }> = [
   { label: '½', key: '1', frac: 0.5 },
@@ -31,6 +33,7 @@ export function ActionBar() {
   const phase = usePlay((s) => s.phase);
   const humanAct = usePlay((s) => s.humanAct);
   const newHand = usePlay((s) => s.newHand);
+  const busted = usePlay((s) => s.busted);
   const myTurn = phase === 'human' && state && !state.terminal && state.toAct === HUMAN;
 
   const toCall = state && myTurn ? state.toCall(HUMAN) : 0;
@@ -144,14 +147,20 @@ export function ActionBar() {
             </div>
           </motion.div>
         ) : (
-          <motion.div key={`wait-${phase}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-[86px] items-center gap-4">
-            {phase === 'over' ? <ResultLine /> : <WaitingText />}
-            {(phase === 'idle' || phase === 'over') && (
-              <button onClick={newHand} className="btn btn-gold ml-auto min-h-[52px] shrink-0 whitespace-nowrap px-5 text-[16px] sm:px-8">
-                {phase === 'idle' ? 'Deal' : 'Next hand'}
-              </button>
-            )}
-          </motion.div>
+          busted && (phase === 'idle' || phase === 'over') ? (
+            <motion.div key="busted" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: phase === 'over' ? 0.9 : 0 }}>
+              <MatchOver />
+            </motion.div>
+          ) : (
+            <motion.div key={`wait-${phase}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-[86px] flex-wrap items-center gap-x-4 gap-y-3">
+              {phase === 'over' ? <ResultLine /> : <WaitingText />}
+              {(phase === 'idle' || phase === 'over') && (
+                <button onClick={newHand} className="btn btn-gold ml-auto min-h-[52px] shrink-0 whitespace-nowrap px-5 text-[16px] sm:px-8">
+                  {phase === 'idle' ? 'Deal' : 'Next hand'}
+                </button>
+              )}
+            </motion.div>
+          )
         )}
       </AnimatePresence>
     </div>
@@ -196,6 +205,31 @@ function ResultLine() {
         {signedMoney(last.net)}
       </span>
       <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-400">{sub}</span>
+    </div>
+  );
+}
+
+/** Someone ran out of chips: the match is over until they buy back in. */
+function MatchOver() {
+  const busted = usePlay((s) => s.busted);
+  const rebuys = usePlay((s) => s.rebuys);
+  const rebuy = usePlay((s) => s.rebuy);
+  const youWon = busted === 'bot';
+  // a rebuy is counted when it happens, so include the match that just ended
+  const won = rebuys[1] + (youWon ? 1 : 0);
+  const lost = rebuys[0] + (youWon ? 0 : 1);
+  return (
+    <div className={`flex flex-wrap items-center gap-4 border p-4 sm:p-5 ${youWon ? 'border-gold' : 'border-ink-100'}`}>
+      <div className="min-w-[200px] flex-1">
+        <div className={`font-mono text-[11px] uppercase tracking-[0.08em] ${youWon ? 'text-gold' : 'text-ink-400'}`}>{youWon ? 'Match won' : 'Match lost'}</div>
+        <div className="mt-1 text-[20px] font-extrabold leading-tight sm:text-[22px]">{youWon ? "You took all of Otto's chips." : 'You ran out of chips.'}</div>
+        <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-ink-400">
+          Matches won {won} · lost {lost}
+        </div>
+      </div>
+      <button onClick={rebuy} className="btn btn-gold min-h-[52px] shrink-0 whitespace-nowrap px-6 text-[16px]">
+        {youWon ? 'Otto rebuys · play on' : `Rebuy ${money(BUY_IN)}`}
+      </button>
     </div>
   );
 }

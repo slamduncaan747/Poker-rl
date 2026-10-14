@@ -2,10 +2,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { HandReview } from '../components/brain/HandReview';
 import { ActionBar } from '../components/table/ActionBar';
-import { Table } from '../components/table/Table';
+import { Table, isShortLandscape, useViewport } from '../components/table/Table';
 import { Segmented, Toggle } from '../components/ui/Controls';
 import { signedMoney } from '../lib/format';
-import { usePlay } from '../lib/store';
+import { recordOf, usePlay } from '../lib/store';
 
 function useWide() {
   const q = '(min-width: 1024px)';
@@ -21,10 +21,29 @@ function useWide() {
 
 export function PlayPage() {
   const wide = useWide();
+  const sideways = isShortLandscape(useViewport());
   const phase = usePlay((s) => s.phase);
   const handNo = usePlay((s) => s.handNo);
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const review = phase === 'over' && last && last.id === handNo ? last : null;
+
+  // a phone on its side: table on the left, everything else in a column beside it
+  if (sideways)
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(250px,300px)] items-start gap-4 px-3 pt-2" style={{ paddingLeft: 'max(12px, env(safe-area-inset-left))', paddingRight: 'max(12px, env(safe-area-inset-right))' }}>
+        <Table />
+        <div className="scrollbar-thin flex max-h-[calc(100dvh-64px)] flex-col gap-3 overflow-y-auto pb-3">
+          <TopBar />
+          <ActionBar />
+          {review && (
+            <div className="glass p-3" aria-label="Hand review">
+              <HandReview h={review} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-3 sm:pt-5 lg:px-6">
       <TopBar />
@@ -62,21 +81,33 @@ export function PlayPage() {
 
 /** Session result on the left, settings on the right. */
 function TopBar() {
-  const history = usePlay((s) => s.history);
-  const net = history.reduce((a, h) => a + h.net, 0);
+  const handNo = usePlay((s) => s.handNo);
+  const stacks = usePlay((s) => s.stacks);
+  const rebuys = usePlay((s) => s.rebuys);
+  const busted = usePlay((s) => s.busted);
+  const r = recordOf(stacks, rebuys, busted);
   return (
     <div className="flex min-h-[40px] items-center justify-between gap-2">
-      <div className="font-mono text-[11px] tracking-[0.08em] text-ink-400">
-        {history.length > 0 && (
-          <>
-            SESSION <span className={`tabular ml-1 text-[13px] font-bold ${net > 0 ? 'text-gold' : 'text-ink-100'}`}>{signedMoney(net)}</span>
-            <span className="ml-2 hidden sm:inline">
-              · {history.length} {history.length === 1 ? 'HAND' : 'HANDS'}
-            </span>
-          </>
-        )}
-      </div>
+      {handNo > 0 ? (
+        <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-400">
+          <Stat label="Net" value={signedMoney(r.net)} tone={r.net > 0 ? 'text-gold' : 'text-ink-100'} />
+          <Stat label="Matches" value={`${r.won}–${r.lost}`} />
+          <Stat label="Hands" value={String(handNo)} className="hidden sm:flex" />
+          <Stat label="Rebuys" value={String(r.rebuys)} className="hidden sm:flex" />
+        </dl>
+      ) : (
+        <span />
+      )}
       <SettingsButton />
+    </div>
+  );
+}
+
+function Stat({ label, value, tone = 'text-ink-100', className = '' }: { label: string; value: string; tone?: string; className?: string }) {
+  return (
+    <div className={`flex items-baseline gap-1.5 ${className}`}>
+      <dt>{label}</dt>
+      <dd className={`tabular text-[13px] font-bold ${tone}`}>{value}</dd>
     </div>
   );
 }
@@ -123,19 +154,30 @@ function SettingsButton() {
                   ]}
                 />
               </div>
-              <button
-                onClick={() => {
+              <ResetButton
+                onReset={() => {
                   reset();
                   setOpen(false);
                 }}
-                className="btn mt-2 min-h-[40px] w-full border border-ink-600 text-sm text-ink-200 hover:border-ink-100"
-              >
-                Start a new session
-              </button>
+              />
             </motion.div>
           </>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** Clears stacks, record, hand history and Otto's read; asks once more before doing it. */
+function ResetButton({ onReset }: { onReset: () => void }) {
+  const [armed, setArmed] = useState(false);
+  return (
+    <button
+      onClick={() => (armed ? onReset() : setArmed(true))}
+      onBlur={() => setArmed(false)}
+      className={`btn mt-2 min-h-[44px] w-full border text-sm ${armed ? 'border-loss text-loss' : 'border-ink-600 text-ink-200 hover:border-ink-100'}`}
+    >
+      {armed ? 'Tap again to erase everything' : 'Reset all history'}
+    </button>
   );
 }

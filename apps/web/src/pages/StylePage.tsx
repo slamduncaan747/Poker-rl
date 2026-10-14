@@ -7,7 +7,7 @@ import { pct, per100, signedMoney } from '../lib/format';
 import { findLeaks } from '../lib/leaks';
 import { HABIT, MARKS, type Mark, STYLES, markOf, voice } from '../lib/otto';
 import type { Models } from '../lib/models';
-import { usePlay } from '../lib/store';
+import { recordOf, usePlay } from '../lib/store';
 import type { CloneIn, CloneOut, CloneProgress } from '../workers/clone.worker';
 import CloneWorker from '../workers/clone.worker.ts?worker&inline';
 
@@ -121,7 +121,7 @@ export function StylePage() {
         {!sample && (
           <section>
             <h2 className="eyebrow mb-3">Your decisions</h2>
-            <Decisions history={history} />
+            <Decisions />
           </section>
         )}
       </div>
@@ -333,15 +333,17 @@ function Noticed({ snap }: { snap: OpponentSnapshot }) {
 const MARK_ORDER: Mark[] = ['Brilliant', 'Best', 'Good', 'Inaccuracy', 'Mistake', 'Blunder'];
 
 /** Hands, result and accuracy, then how many of each mark you earned. */
-function Decisions({ history }: { history: ReturnType<typeof usePlay.getState>['history'] }) {
-  const grades = history.flatMap((h) => h.grades);
-  const net = history.reduce((a, h) => a + h.net, 0);
+function Decisions() {
+  // all-time figures: the saved hand list is trimmed, the grades and stacks are not
+  const grades = usePlay((s) => s.allGrades);
+  const hands = usePlay((s) => s.handNo);
+  const { net } = recordOf(usePlay((s) => s.stacks), usePlay((s) => s.rebuys), usePlay((s) => s.busted));
   const counts = new Map<Mark, number>();
   for (const g of grades) counts.set(markOf(g), (counts.get(markOf(g)) ?? 0) + 1);
   return (
     <div>
       <div className="grid grid-cols-3 gap-4">
-        <Stat label="Hands" value={String(history.length)} />
+        <Stat label="Hands" value={String(hands)} />
         <Stat label="Result" value={signedMoney(net)} gold={net > 0} />
         <Stat label="Accuracy" value={grades.length ? accuracy(grades).toFixed(0) : '—'} />
       </div>

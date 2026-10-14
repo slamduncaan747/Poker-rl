@@ -11,6 +11,7 @@ import {
   STAT_KEYS,
   type StatKey,
   CryptoRng,
+  DEFAULT_CONFIG,
   describeHand,
   equityVsRandom,
   gradeDecision,
@@ -21,6 +22,7 @@ import { create } from 'zustand';
 import { type Explanation, explain } from './explain';
 import { describeAction } from './format';
 import { type Models, loadModels } from './models';
+import { clearGame, loadGame, restoreModel, saveGame, snapshotModel } from './persist';
 import { setSoundEnabled, sfx } from './sound';
 
 export const HUMAN = 0;
@@ -100,7 +102,15 @@ interface PlayStore {
   humanEquity: number | null;
   hint: StrategyLookup | null;
   settings: Settings;
+  /** chips each player has between hands: [you, Otto] */
+  stacks: [number, number];
+  /** times each player went broke and bought back in: [you, Otto] */
+  rebuys: [number, number];
+  /** who ran out of chips in the hand just played, until they rebuy */
+  busted: 'human' | 'bot' | null;
   init(): Promise<void>;
+  /** Refill the busted player's stack and deal the next hand. */
+  rebuy(): void;
   newHand(): void;
   humanAct(action: Action): void;
   requestHint(): void;
@@ -111,6 +121,7 @@ interface PlayStore {
 // Deals use a cryptographic RNG; the AI's own sampling uses the same stream.
 const rng = new CryptoRng();
 let timer: ReturnType<typeof setTimeout> | null = null;
+const BUY_IN = DEFAULT_CONFIG.startingStack;
 let decisionId = 0;
 let bubbleId = 0;
 const humanBuckets = new Map<number, number>();
@@ -149,6 +160,12 @@ function loadSettings(): Settings {
 export const usePlay = create<PlayStore>((set, get) => {
   const bump = () => set((s) => ({ version: s.version + 1 }));
 
+  const persist = () => {
+    const { bot, stacks, handNo, rebuys, history, allGrades } = get();
+    if (!bot) return;
+    saveGame({ version: 1, stacks, handNo, rebuys, history, grades: allGrades, model: snapshotModel(bot.model), profitBB: bot.profitBB });
+  };
+
   const clearTimer = () => {
     if (timer) clearTimeout(timer);
     timer = null;
@@ -172,7 +189,7 @@ export const usePlay = create<PlayStore>((set, get) => {
   };
 
   const finishHand = () => {
-    const { state, bot, botDecisions, humanGrades, handNo, history } = get();
+    const { state, bot, botDecisions, humanGrades, handNo, history, stacks } = get();
     if (!state || !bot) return;
     const before = Object.fromEntries(STAT_KEYS.map((k) => [k, { ...bot.model.counters[k], mean: bot.model.mean(k) }]));
     bot.endHand(state, BOT);
@@ -205,10 +222,14 @@ export const usePlay = create<PlayStore>((set, get) => {
       modelHands: bot.model.hands,
       observed,
     };
-    set({ phase: 'over', history: [...history, summary] });
+    // stacks carry over: whoever reaches zero is out until they rebuy
+    const next: [number, number] = [stacks[HUMAN] + pay[HUMAN], stacks[BOT] + pay[BOT]];
+    const busted = next[HUMAN] <= 0 ? 'human' : next[BOT] <= 0 ? 'bot' : null;
+    set({ phase: 'over', history: [...history, summary], stacks: next, busted });
+    persist();
     setTimeout(() => (pay[HUMAN] > 0 ? sfx.win() : pay[HUMAN] < 0 ? sfx.lose() : undefined), showdown ? 700 : 200);
     bump();
-    if (get().settings.autoDeal) {
+    if (get().settings.autoDeal && !busted) {
       clearTimer();
       timer = setTimeout(() => get().newHand(), showdown ? 3600 : 2200);
     }
@@ -263,6 +284,9 @@ export const usePlay = create<PlayStore>((set, get) => {
     humanEquity: null,
     hint: null,
     settings: loadSettings(),
+    stacks: [BUY_IN, BUY_IN],
+    rebuys: [0, 0],
+    busted: null,
 
     async init() {
       if (get().models) return;
@@ -276,6 +300,14 @@ export const usePlay = create<PlayStore>((set, get) => {
           { lambda: settings.lambda, riskBudget: settings.riskBudget, name: 'Poker RL' },
           new OpponentModel(models.exploit.baseline, undefined, models.exploit.baselineBetSize),
         );
+        // pick up where the last visit left off
+        const saved = loadGame();
+        if (saved) {
+          restoreModel(bot.model, saved.model);
+          bot.profitBB = saved.profitBB;
+          const busted = saved.stacks[HUMAN] <= 0 ? 'human' : saved.stacks[BOT] <= 0 ? 'bot' : null;
+          set({ stacks: saved.stacks, rebuys: saved.rebuys, handNo: saved.handNo, history: saved.history, allGrades: saved.grades, busted });
+        }
         set({ models, bot, phase: 'idle', loadProgress: 1 });
       } catch (e) {
         set({ phase: 'error', error: (e as Error).message });
@@ -283,13 +315,13 @@ export const usePlay = create<PlayStore>((set, get) => {
     },
 
     newHand() {
-      const { bot, handNo, phase } = get();
-      if (!bot || (phase !== 'idle' && phase !== 'over')) return;
+      const { bot, handNo, phase, stacks, busted } = get();
+      if (!bot || busted || (phase !== 'idle' && phase !== 'over')) return;
       clearTimer();
       humanBuckets.clear();
       const n = handNo + 1;
-      // Human holds the button on odd hands; everyone starts each hand 100bb deep.
-      const state = new HUNLState(randomDeal(rng), n % 2 === 1 ? HUMAN : BOT);
+      // Human holds the button on odd hands; stacks carry over from the last hand.
+      const state = new HUNLState(randomDeal(rng), n % 2 === 1 ? HUMAN : BOT, DEFAULT_CONFIG, stacks);
       bot.beginHand();
       set({ state, handNo: n, phase: 'dealing', botDecisions: [], humanGrades: [], bubble: null, humanEquity: null, hint: null });
       sfx.deal();
@@ -337,11 +369,37 @@ export const usePlay = create<PlayStore>((set, get) => {
       if (p.coach !== undefined && get().phase === 'human') updateEquity();
     },
 
+    rebuy() {
+      const { busted, stacks, rebuys } = get();
+      if (!busted) return;
+      const seat = busted === 'human' ? HUMAN : BOT;
+      const nextStacks: [number, number] = [...stacks];
+      const nextRebuys: [number, number] = [...rebuys];
+      nextStacks[seat] = BUY_IN;
+      nextRebuys[seat] += 1;
+      set({ stacks: nextStacks, rebuys: nextRebuys, busted: null });
+      persist();
+      get().newHand();
+    },
+
     resetSession() {
       clearTimer();
       const bot = get().bot;
       bot?.resetModel();
-      set({ state: null, handNo: 0, history: [], allGrades: [], humanGrades: [], botDecisions: [], phase: 'idle', bubble: null });
+      clearGame();
+      set({
+        state: null,
+        handNo: 0,
+        history: [],
+        allGrades: [],
+        humanGrades: [],
+        botDecisions: [],
+        phase: 'idle',
+        bubble: null,
+        stacks: [BUY_IN, BUY_IN],
+        rebuys: [0, 0],
+        busted: null,
+      });
       bump();
     },
   };
@@ -350,4 +408,18 @@ export const usePlay = create<PlayStore>((set, get) => {
 // Expose the store for automated browser tests in development builds.
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as { __play: typeof usePlay }).__play = usePlay;
+}
+
+/**
+ * The running record across rebuys: net result (current stack minus every
+ * buy-in) and matches won and lost (a match ends when someone runs out).
+ */
+export function recordOf(stacks: [number, number], rebuys: [number, number], busted: 'human' | 'bot' | null) {
+  const buyIn = DEFAULT_CONFIG.startingStack;
+  return {
+    net: stacks[HUMAN] - buyIn * (1 + rebuys[HUMAN]),
+    won: rebuys[BOT] + (busted === 'bot' ? 1 : 0),
+    lost: rebuys[HUMAN] + (busted === 'human' ? 1 : 0),
+    rebuys: rebuys[HUMAN],
+  };
 }

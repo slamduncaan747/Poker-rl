@@ -11,7 +11,7 @@ import { OttoSeat } from './Otto';
 import { DIMS, Deck, PlayingCard } from './PlayingCard';
 import { Count } from '../ui/Count';
 
-function useViewport() {
+export function useViewport() {
   const read = () => ({ w: typeof window !== 'undefined' ? window.innerWidth : 1440, h: typeof window !== 'undefined' ? window.innerHeight : 900 });
   const [v, setV] = useState(read);
   useEffect(() => {
@@ -35,24 +35,39 @@ export function Table() {
   const showBotCards = usePlay((s) => s.settings.showBotCards);
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const handNo = usePlay((s) => s.handNo);
+  const stacks = usePlay((s) => s.stacks);
 
   const vp = useViewport();
-  const narrow = vp.w < 720;
-  // On desktop, keep the whole play area inside one screen. In a self-sizing
-  // embed the frame grows to fit the content, so only the width limits the table.
-  const maxHeight = vp.w >= 1024 && !autosize ? Math.max(380, vp.h - 300) : undefined;
-  const W = narrow ? 560 : 960;
-  const H = narrow ? 580 : 600;
-  const potTop = narrow ? 200 : 196;
-  const potLine = narrow ? 300 : 360;
+  // a phone on its side: the table sits beside the controls and fills the height
+  const shortLandscape = isShortLandscape(vp);
+  const narrow = vp.w < 720 && !shortLandscape;
+  // Keep the whole play area inside one screen on desktop and on phones held
+  // sideways. In a self-sizing embed the frame grows to fit the content, so
+  // only the width limits the table.
+  // On a phone held upright the controls are pinned below, so the table leaves
+  // room for them and your seat never slides underneath.
+  const maxHeight = autosize
+    ? undefined
+    : shortLandscape
+      ? Math.max(240, vp.h - 64)
+      : vp.w >= 1024
+        ? Math.max(380, vp.h - 300)
+        : vp.w < 720
+          ? Math.max(260, vp.h - 290)
+          : undefined;
+  // the narrow (portrait phone) layout is drawn tighter so it scales up larger
+  const W = narrow ? 440 : 960;
+  const H = narrow ? 500 : 600;
+  const potTop = narrow ? 196 : 196;
+  const potLine = narrow ? 260 : 360;
   // where the pot's chips sit: just left of the pot dimension line
   const potX = W / 2 - potLine / 2 - 36;
   const potY = potTop - 8;
-  const betX = W / 2 + (narrow ? 70 : 80);
+  const betX = W / 2 + (narrow ? 82 : 80);
   const betTop = narrow ? 120 : 112;
   const seatY = { bot: 30, human: H - 30 };
 
-  const gutter = narrow ? 6 : 40;
+  const gutter = narrow ? 4 : 40;
   const over = phase === 'over' && state?.terminal;
   const settled = !!over && last?.id === handNo;
   const winner = settled ? last!.winner : null;
@@ -62,10 +77,12 @@ export function Table() {
   const holeSize = narrow ? ('sm' as const) : ('md' as const);
   const boardY = H / 2 + (narrow ? 0 : 6);
   const deckSize = narrow ? ('sm' as const) : ('md' as const);
-  const deckX = narrow ? 30 : gutter + 54;
-  const deck = { x: deckX + DIMS[deckSize].w / 2, y: boardY };
+  // on a narrow table the board spans almost the full width, so the deck moves up beside Otto's cards
+  const deckX = narrow ? 52 : gutter + 54;
+  const deckY = narrow ? 150 : boardY;
+  const deck = { x: deckX + DIMS[deckSize].w / 2, y: deckY };
   const cw = DIMS[cardSize].w;
-  const gap = narrow ? 6 : 10;
+  const gap = narrow ? 5 : 10;
   const botTop = narrow ? 92 : 86;
   const humanBottom = narrow ? 92 : 86;
   const holeCenter = (seat: number, i: number) => {
@@ -84,7 +101,7 @@ export function Table() {
 
         {state && (
           <>
-            <div className="absolute -translate-y-1/2" style={{ left: deckX, top: boardY }}>
+            <div className="absolute -translate-y-1/2" style={{ left: deckX, top: deckY }}>
               <Deck size={deckSize} />
             </div>
 
@@ -210,16 +227,21 @@ export function Table() {
         {/* player bars */}
         <OttoSeat
           state={state}
-          stack={settled ? 10_000 - last!.net : state ? state.stacks[BOT] : 10_000}
+          stack={settled || !state ? stacks[BOT] : state.stacks[BOT]}
           toAct={!!state && !state.terminal && state.toAct === BOT}
           won={winner === 'bot'}
-          width={narrow ? 250 : 300}
-          left={narrow ? 16 : undefined}
+          width={narrow ? 220 : 300}
+          left={narrow ? 12 : undefined}
         />
         <SeatBar state={state} won={winner === 'human'} />
       </div>
     </FitBox>
   );
+}
+
+/** A phone held sideways: too short to stack the table above the controls. */
+export function isShortLandscape(vp: { w: number; h: number }) {
+  return vp.h < 520 && vp.w > vp.h;
 }
 
 function potInMiddle(s: HUNLState) {
@@ -280,9 +302,10 @@ function HoleCards({
 function SeatBar({ state, won }: { state: HUNLState | null; won: boolean }) {
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const handNo = usePlay((s) => s.handNo);
-  // Once the hand is settled, show your stack after the pot is paid out (each hand starts at $200).
+  const stacks = usePlay((s) => s.stacks);
+  // Once the hand is settled, show your stack after the pot is paid out; stacks carry over between hands.
   const settled = !!state?.terminal && last?.id === handNo;
-  const stack = settled ? 10_000 + last.net : state ? state.stacks[HUMAN] : 10_000;
+  const stack = settled || !state ? stacks[HUMAN] : state.stacks[HUMAN];
   const toAct = !!state && !state.terminal && state.toAct === HUMAN;
   const allIn = !!state && state.stacks[HUMAN] === 0 && !state.terminal;
   return (
@@ -306,8 +329,9 @@ function SeatBar({ state, won }: { state: HUNLState | null; won: boolean }) {
 }
 
 function IdleTable() {
-  const newHand = usePlay((s) => s.newHand);
-  const phase = usePlay((s) => s.phase);
+  const handNo = usePlay((s) => s.handNo);
+  const stacks = usePlay((s) => s.stacks);
+  const resumed = handNo > 0;
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
       <div className="flex gap-2.5">
@@ -315,13 +339,14 @@ function IdleTable() {
           <PlayingCard key={c} card={c} size="lg" delay={0.15 + i * 0.07} />
         ))}
       </div>
-      <div className="text-center">
-        <div className="text-[22px] font-extrabold">You vs Otto</div>
-        <div className="mt-1 text-[14px] text-ink-400">Heads-up hold'em. $200 each. Best five-card hand wins.</div>
+      <div className="max-w-[440px] px-4 text-center">
+        <div className="text-[22px] font-extrabold">{resumed ? 'Welcome back' : 'You vs Otto'}</div>
+        <div className="mt-1 text-[14px] leading-snug text-ink-400">
+          {resumed
+            ? `Your stack: ${money(stacks[HUMAN])}. Otto's: ${money(stacks[BOT])}.`
+            : "Heads-up hold'em, $200 each. Your chips carry over from hand to hand — take all of Otto's to win the match."}
+        </div>
       </div>
-      <button onClick={newHand} disabled={phase === 'loading'} className="btn btn-gold min-h-[52px] px-10 text-base">
-        Deal
-      </button>
     </div>
   );
 }
