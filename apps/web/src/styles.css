@@ -265,33 +265,60 @@ body {
 input[type='range'].slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 2px;
-  border-radius: 0;
-  background: linear-gradient(90deg, var(--color-gold) var(--fill, 0%), var(--color-ink-500) var(--fill, 0%));
+  height: 40px;
+  background: transparent;
   outline: none;
+  cursor: pointer;
+  /* horizontal drags move the slider, vertical ones still scroll the page */
+  touch-action: pan-y;
+}
+
+input[type='range'].slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-gold) var(--fill, 0%), var(--color-ink-500) var(--fill, 0%));
 }
 
 input[type='range'].slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 22px;
-  border-radius: 2px;
+  width: 22px;
+  height: 30px;
+  margin-top: -13px;
+  border-radius: 3px;
   background: var(--color-ink-100);
   border: 2px solid var(--color-ink-950);
-  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--color-ink-500);
+}
+
+input[type='range'].slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-ink-500);
+}
+
+input[type='range'].slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-gold);
 }
 
 input[type='range'].slider::-moz-range-thumb {
-  width: 14px;
-  height: 22px;
-  border-radius: 2px;
+  width: 22px;
+  height: 30px;
+  border-radius: 3px;
   background: var(--color-ink-100);
   border: 2px solid var(--color-ink-950);
-  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--color-ink-500);
 }
 
-input[type='range'].slider.slider-exploit {
-  background: linear-gradient(90deg, var(--color-gold) var(--fill, 0%), var(--color-ink-500) var(--fill, 0%));
+input[type='range'].slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+input[type='range'].slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
 }
 
 /* ruler ticks under a slider */

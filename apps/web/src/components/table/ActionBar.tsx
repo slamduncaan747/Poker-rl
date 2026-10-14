@@ -5,6 +5,10 @@ import { money, signedMoney } from '../../lib/format';
 import { HUMAN, usePlay } from '../../lib/store';
 
 const BUY_IN = DEFAULT_CONFIG.startingStack;
+/** Slider resolution; amounts snap to whole dollars and +/- move by a big blind. */
+const STEPS = 1000;
+const SNAP = 50;
+const NUDGE = DEFAULT_CONFIG.bigBlind;
 
 const PRESETS: Array<{ label: string; key: string; frac: number | 'min' | 'all' }> = [
   { label: '½', key: '1', frac: 0.5 },
@@ -88,7 +92,19 @@ export function ActionBar() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const fill = minTo !== null && maxTo > minTo ? ((to - minTo) / (maxTo - minTo)) * 100 : 100;
+  // Quadratic scale: the slider spends most of its travel on the sizes people actually bet.
+  const span = minTo !== null ? maxTo - minTo : 0;
+  const snap = (v: number) => {
+    if (minTo === null) return 0;
+    if (v >= maxTo - SNAP / 2) return maxTo;
+    return Math.min(maxTo, Math.max(minTo, Math.round(v / SNAP) * SNAP));
+  };
+  const toPos = (v: number) => (span > 0 && minTo !== null ? Math.round(Math.sqrt(Math.max(0, v - minTo) / span) * STEPS) : STEPS);
+  const fromPos = (pos: number) => snap((minTo ?? 0) + span * (pos / STEPS) ** 2);
+  const nudge = (dir: 1 | -1) => setTo((v) => snap(dir > 0 ? Math.floor(v / NUDGE) * NUDGE + NUDGE : Math.ceil(v / NUDGE) * NUDGE - NUDGE));
+  const pos = toPos(to);
+  const fill = (pos / STEPS) * 100;
+  const potPct = state && myTurn ? Math.round(((to - state.streetBet[1 - HUMAN]) / (state.pot + toCall)) * 100) : 0;
   const toCallLabel = toCall > 0 ? `Call ${money(toCall)}` : 'Check';
   const raiseLabel = `${to >= maxTo ? 'All-in' : raiseWord === 'Bet' ? 'Bet' : 'Raise'} ${money(to)}`;
 
@@ -101,7 +117,8 @@ export function ActionBar() {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-3">
                   <label htmlFor="raise-to" className="font-mono text-[10.5px] tracking-[0.08em] text-ink-400">
-                    {raiseWord === 'Bet' ? 'BET SIZE' : 'RAISE SIZE'}
+                    {raiseWord === 'Bet' ? 'BET' : 'RAISE'} <span className="tabular text-ink-100">{money(to)}</span>
+                    <span className="hidden sm:inline"> · {to >= maxTo ? 'ALL-IN' : state?.street === 0 ? `${+(to / DEFAULT_CONFIG.bigBlind).toFixed(1)} BB` : `${potPct}% POT`}</span>
                   </label>
                   <div className="flex gap-1">
                     {PRESETS.map((p) => {
@@ -120,18 +137,33 @@ export function ActionBar() {
                     })}
                   </div>
                 </div>
-                <input
-                  id="raise-to"
-                  type="range"
-                  className="slider w-full"
-                  min={minTo}
-                  max={maxTo}
-                  step={10}
-                  value={to}
-                  style={{ ['--fill' as string]: `${fill}%` }}
-                  onChange={(e) => setTo(Number(e.target.value))}
-                  aria-label="Bet size"
-                />
+                <div className="flex items-center gap-2">
+                  <button onClick={() => nudge(-1)} disabled={to <= minTo} aria-label="Smaller" className="btn h-10 w-10 shrink-0 border border-ink-600 text-[18px] text-ink-300 hover:text-ink-100">
+                    −
+                  </button>
+                  <input
+                    id="raise-to"
+                    type="range"
+                    className="slider min-w-0 flex-1"
+                    min={0}
+                    max={STEPS}
+                    step={1}
+                    value={pos}
+                    style={{ ['--fill' as string]: `${fill}%` }}
+                    onChange={(e) => setTo(fromPos(Number(e.target.value)))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') nudge(-1);
+                      else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') nudge(1);
+                      else return;
+                      e.preventDefault();
+                    }}
+                    aria-label="Bet size"
+                    aria-valuetext={money(to)}
+                  />
+                  <button onClick={() => nudge(1)} disabled={to >= maxTo} aria-label="Bigger" className="btn h-10 w-10 shrink-0 border border-ink-600 text-[18px] text-ink-300 hover:text-ink-100">
+                    +
+                  </button>
+                </div>
               </div>
             )}
             <div className="grid grid-cols-3 gap-2">
