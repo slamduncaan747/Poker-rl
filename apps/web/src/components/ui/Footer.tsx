@@ -1,3 +1,5 @@
+import { embedded } from '../../lib/embed';
+
 /** Quiet credits: who built it and where to find the code. */
 export const AUTHOR = {
   name: 'Duncan Larzelere',
@@ -8,6 +10,8 @@ export const AUTHOR = {
 };
 
 export function Footer() {
+  // the host portfolio has its own credits
+  if (embedded) return null;
   return (
     <footer className="border-t border-ink-600">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-6 font-mono text-[11px] tracking-[0.06em] text-ink-500 lg:px-6">

@@ -2,7 +2,7 @@ import type { HUNLState } from '@poker-rl/engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { money } from '../../lib/format';
-import { OTTO, quip } from '../../lib/otto';
+import { OTTO } from '../../lib/otto';
 import { BOT, type BotDecisionView, usePlay } from '../../lib/store';
 import { GROUP_COLORS } from './ActionBar';
 import { Count } from '../ui/Count';
@@ -34,12 +34,11 @@ export function OttoFace({ mood, size = 44 }: { mood: Mood; size?: number }) {
   );
 }
 
-/** Otto's seat: face, name and stack, a speech bubble after it acts, and its reasoning on hover. */
+/** Otto's seat: face, name and stack, its last action, and its reasoning on hover. */
 export function OttoSeat({ state, stack, toAct, won, width, left }: { state: HUNLState | null; stack: number; toAct: boolean; won: boolean; width: number; left?: number }) {
   const phase = usePlay((s) => s.phase);
   const decisions = usePlay((s) => s.botDecisions);
   const bubble = usePlay((s) => s.bubble);
-  const bot = usePlay((s) => s.bot);
   const last = usePlay((s) => s.history[s.history.length - 1]);
   const handNo = usePlay((s) => s.handNo);
   const [open, setOpen] = useState(false);
@@ -47,8 +46,6 @@ export function OttoSeat({ state, stack, toAct, won, width, left }: { state: HUN
   const settled = phase === 'over' && last?.id === handNo;
   const mood: Mood =
     phase === 'bot' ? 'thinking' : settled ? (last.net < 0 ? 'won' : last.net > 0 ? 'lost' : 'idle') : d?.explanation.tone === 'exploit' ? 'reading' : 'idle';
-  const snap = bot ? bot.model.snapshot() : null;
-  const line = phase === 'bot' ? '…' : settled ? (last.net < 0 ? 'Good hand for me.' : last.net > 0 ? 'Nicely played.' : 'Split it.') : quip(d, snap);
   const action = !settled && bubble && bubble.seat === BOT ? bubble.text : null;
   const allIn = !!state && state.stacks[BOT] === 0 && !state.terminal;
 
@@ -76,17 +73,16 @@ export function OttoSeat({ state, stack, toAct, won, width, left }: { state: HUN
 
       {/* speech bubble */}
       <AnimatePresence mode="wait">
-        {state && line && (
+        {state && action && (
           <motion.div
-            key={`${handNo}-${line}-${action ?? ''}`}
+            key={`${handNo}-${bubble?.id}`}
             initial={{ opacity: 0, x: -4 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute left-full top-1/2 ml-4 -translate-y-1/2 whitespace-nowrap border border-ink-100 bg-ink-950 px-3 py-1.5"
           >
             <span aria-hidden="true" className="absolute -left-[7px] top-1/2 h-3 w-3 -translate-y-1/2 rotate-45 border-b border-l border-ink-100 bg-ink-950" />
-            {action && <div className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-gold">{action}</div>}
-            <div className="text-[14px]">{line}</div>
+            <div className="font-mono text-[12px] font-bold uppercase tracking-[0.08em]">{action}</div>
           </motion.div>
         )}
       </AnimatePresence>

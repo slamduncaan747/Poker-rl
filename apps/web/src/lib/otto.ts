@@ -1,5 +1,4 @@
-import type { OpponentSnapshot, StatKey } from '@poker-rl/engine';
-import type { BotDecisionView } from './store';
+import type { StatKey } from '@poker-rl/engine';
 
 /** The AI's name at the table. */
 export const OTTO = 'Otto';
@@ -23,36 +22,6 @@ export const HABIT: Record<StatKey, string> = {
   bluffShow: 'Get caught bluffing',
   lightCall: 'Call light on the river',
 };
-
-/** What Otto says about a habit that is clearly above / below normal. */
-const QUIP: Record<StatKey, { high: string; low: string }> = {
-  vpip: { high: 'You play every hand.', low: "You're so tight." },
-  pfr: { high: 'You raise a lot.', low: 'You never raise.' },
-  sbOpen: { high: 'You open wide.', low: "You don't open enough." },
-  limp: { high: 'Limping again?', low: 'You never limp.' },
-  foldVsOpen: { high: 'You give up your blind.', low: 'You defend everything.' },
-  threeBet: { high: 'Re-raising again?', low: "You don't fight back." },
-  foldTo3bet: { high: 'You fold to re-raises.', low: 'You never back down.' },
-  cbet: { high: 'You always follow up.', low: 'You give up the lead.' },
-  foldToCbet: { high: 'You give up flops.', low: "You don't let go." },
-  postBet: { high: 'You bet whenever you can.', low: 'You check too much.' },
-  foldToBet: { high: 'You fold too much.', low: 'You never fold.' },
-  raiseVsBet: { high: 'You raise a lot.', low: 'You just call.' },
-  foldRiver: { high: 'You fold rivers.', low: 'You call everything.' },
-  wtsd: { high: 'You love showdowns.', low: 'You give up early.' },
-  bluffShow: { high: "I've seen your bluffs.", low: 'You only bet the goods.' },
-  lightCall: { high: 'You call light.', low: 'You only call with it.' },
-};
-
-/** Otto's one-line remark after a decision. */
-export function quip(d: BotDecisionView | undefined, snap: OpponentSnapshot | null): string {
-  if (!d) return '';
-  if (d.explanation.tone !== 'exploit') return snap && snap.hands < 10 ? 'Still learning you.' : 'Playing it straight.';
-  const stat = d.explanation.reasons[0]?.stat as StatKey | undefined;
-  const s = stat && snap?.stats.find((x) => x.key === stat);
-  if (stat && s) return QUIP[stat][s.mean >= s.baseline ? 'high' : 'low'];
-  return "I've got a read on you.";
-}
 
 /** Rewrite a leak's advice in Otto's voice. */
 export function voice(text: string): string {
