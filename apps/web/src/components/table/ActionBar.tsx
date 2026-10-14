@@ -13,17 +13,17 @@ const PRESETS: Array<{ label: string; key: string; frac: number | 'min' | 'all' 
 
 /** Action colours: passive → aggressive (validated palette; always paired with labels). */
 export const CODE_COLORS: Record<Code, string> = {
-  f: '#4a4f56',
-  k: '#8c929a',
-  c: '#8c929a',
-  t: '#cdcac3',
-  h: '#e6e3dc',
-  p: '#e8743b',
-  a: '#b8542a',
+  f: 'var(--color-fold)',
+  k: 'var(--color-call)',
+  c: 'var(--color-call)',
+  t: 'var(--color-small-lo)',
+  h: 'var(--color-small)',
+  p: 'var(--color-big)',
+  a: 'var(--color-allin)',
 };
 
 /** Fold, check/call, small bet, big bet: dark to bright, the accent for the most aggressive. */
-export const GROUP_COLORS = ['#4a4f56', '#8c929a', '#e6e3dc', '#e8743b'];
+export const GROUP_COLORS = ['var(--color-fold)', 'var(--color-call)', 'var(--color-small)', 'var(--color-big)'];
 
 export function ActionBar() {
   const state = usePlay((s) => s.state);

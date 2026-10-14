@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { usePlay } from './lib/store';
 import { OttoFace } from './components/table/Otto';
-import { autosize, useReportHeight } from './lib/embed';
+import { autosize, hostNav, postRoute, useReportHeight } from './lib/embed';
 import { PlayPage } from './pages/PlayPage';
 
 const ArenaPage = lazy(() => import('./pages/ArenaPage').then((m) => ({ default: m.ArenaPage })));
@@ -33,14 +33,24 @@ export function App() {
       window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    // the host page can switch views
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'otto:navigate' && ROUTES.some((r) => r.id === e.data.route)) window.location.hash = e.data.route;
+    };
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('hashchange', onHash);
+      window.removeEventListener('message', onMessage);
+    };
   }, [init]);
+
+  useEffect(() => postRoute(route), [route]);
 
   useReportHeight();
 
   return (
     <div className={`app-bg ${autosize ? '' : 'min-h-screen'}`}>
-      <Header route={route} />
+      {!hostNav && <Header route={route} />}
       {phase === 'loading' || phase === 'error' ? (
         <Loading />
       ) : (

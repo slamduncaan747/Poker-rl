@@ -63,6 +63,11 @@ With `?embed=auto` it instead posts its content height so the frame can grow to 
 </script>
 ```
 
+Two more options let a host site make Otto look and behave like one of its own pages (this is how [dl8ai.com/otto](https://dl8ai.com/otto) embeds it):
+
+- `theme=paper` — a light theme in the same drafting style (ink on paper, transparent background so the host's grid shows through, the host's fonts).
+- `nav=0` — hide Otto's own header; the host switches views with `postMessage({ type: 'otto:navigate', route })`, and Otto reports each view change with `{ type: 'otto:route', route }`.
+
 Routes: `#play`, `#you`, `#arena`, `#how`.
 
 ## Results
