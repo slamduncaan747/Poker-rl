@@ -20,6 +20,23 @@ export const embedded = (() => {
   }
 })();
 
+const params = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
+
+/** `?theme=paper`: the light theme that matches the DL8 AI site. */
+export const theme = params.get('theme') === 'paper' ? 'paper' : 'dark';
+
+/**
+ * `?nav=0`: the host page provides navigation, so Otto hides its own header.
+ * The host switches views with `postMessage({ type: 'otto:navigate', route })`,
+ * and Otto reports every view change with `{ type: 'otto:route', route }`.
+ */
+export const hostNav = embedded && params.get('nav') === '0';
+
+/** Tell the host which view is showing. */
+export function postRoute(route: string) {
+  if (embedded && window.parent !== window) window.parent.postMessage({ type: 'otto:route', route }, '*');
+}
+
 /** Embedded with `?embed=auto`: the host sizes the frame to the content. */
 export const autosize = (() => {
   if (typeof window === 'undefined') return false;

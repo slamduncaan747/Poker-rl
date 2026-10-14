@@ -130,25 +130,25 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
       <svg ref={ref} viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block w-full touch-none select-none" onPointerMove={onMove} onPointerLeave={() => setHover(null)} role="img" aria-label={`${yLabel ?? ''} chart`}>
         {yTicks.map((t) => (
           <g key={t}>
-            <line x1={pad.l} x2={W - pad.r} y1={sy(t)} y2={sy(t)} stroke="#2a2e33" />
-            <text x={pad.l - 6} y={sy(t) + 3.5} textAnchor="end" fontSize="10" fill="#8c929a" fontFamily="var(--font-mono)" className="tabular">
+            <line x1={pad.l} x2={W - pad.r} y1={sy(t)} y2={sy(t)} stroke="var(--color-ink-700)" />
+            <text x={pad.l - 6} y={sy(t) + 3.5} textAnchor="end" fontSize="10" fill="var(--color-ink-400)" fontFamily="var(--font-mono)" className="tabular">
               {formatY(t)}
             </text>
           </g>
         ))}
-        {zeroLine && y0 < 0 && y1 > 0 && <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="#5a5f66" />}
+        {zeroLine && y0 < 0 && y1 > 0 && <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="var(--color-ink-500)" />}
         {xTicks.filter((t, i, a) => i === 0 || formatX(logX ? a[i - 1] : a[i - 1]) !== formatX(logX ? t : t)).map((t) => (
-          <text key={t} x={sx(t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="#8c929a" fontFamily="var(--font-mono)" className="tabular">
+          <text key={t} x={sx(t)} y={H - (xLabel ? 18 : 6)} textAnchor="middle" fontSize="10" fill="var(--color-ink-400)" fontFamily="var(--font-mono)" className="tabular">
             {formatX(logX ? t : t)}
           </text>
         ))}
         {xLabel && (
-          <text x={(pad.l + W - pad.r) / 2} y={H - 3} textAnchor="middle" fontSize="10" fill="#abafb5">
+          <text x={(pad.l + W - pad.r) / 2} y={H - 3} textAnchor="middle" fontSize="10" fill="var(--color-ink-300)">
             {xLabel}
           </text>
         )}
         {yLabel && (
-          <text x={10} y={(pad.t + H - pad.b) / 2} textAnchor="middle" fontSize="10" fill="#abafb5" transform={`rotate(-90 10 ${(pad.t + H - pad.b) / 2})`}>
+          <text x={10} y={(pad.t + H - pad.b) / 2} textAnchor="middle" fontSize="10" fill="var(--color-ink-300)" transform={`rotate(-90 10 ${(pad.t + H - pad.b) / 2})`}>
             {yLabel}
           </text>
         )}
@@ -207,7 +207,7 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
                 {bracket.label}
               </text>
               {bracket.sub && (
-                <text x={xl + 8} y={(ya + yb) / 2 + 16} fill="#8c929a" stroke="none" fontSize="9.5" fontFamily="var(--font-mono)">
+                <text x={xl + 8} y={(ya + yb) / 2 + 16} fill="var(--color-ink-400)" stroke="none" fontSize="9.5" fontFamily="var(--font-mono)">
                   {bracket.sub}
                 </text>
               )}
@@ -216,10 +216,10 @@ export function LineChart({ series, height = 200, xLabel, yLabel, formatY = (v) 
         })()}
         {hx !== null && hx !== undefined && (
           <g>
-            <line x1={sx(hx)} x2={sx(hx)} y1={pad.t} y2={H - pad.b} stroke="#5a5f66" strokeDasharray="3 3" />
+            <line x1={sx(hx)} x2={sx(hx)} y1={pad.t} y2={H - pad.b} stroke="var(--color-ink-500)" strokeDasharray="3 3" />
             {series.map((s) => {
               const p = s.points.find(([x]) => x === hx);
-              return p ? <circle key={s.name} cx={sx(p[0])} cy={sy(p[1])} r={4.5} fill={s.color} stroke="#15181b" strokeWidth={2} /> : null;
+              return p ? <circle key={s.name} cx={sx(p[0])} cy={sy(p[1])} r={4.5} fill={s.color} stroke="var(--color-ink-900)" strokeWidth={2} /> : null;
             })}
           </g>
         )}

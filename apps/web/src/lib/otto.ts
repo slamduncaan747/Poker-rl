@@ -42,12 +42,12 @@ export function markOf(g: { label: string; code: string; prob: number }): Mark {
 
 /** Chess-style marks, coloured from brilliant (teal) through green and yellow to blunder (red). */
 export const MARKS: Record<Mark, { sym: string; text: string; good: boolean; color: string }> = {
-  Brilliant: { sym: '!!', text: 'Brilliant', good: true, color: '#3cc2ae' },
-  Best: { sym: '★', text: 'Best', good: true, color: '#7cc160' },
-  Good: { sym: '✓', text: 'Good', good: true, color: '#a6b892' },
-  Inaccuracy: { sym: '?!', text: 'Inaccuracy', good: false, color: '#e6bf45' },
-  Mistake: { sym: '?', text: 'Mistake', good: false, color: '#ee8d3e' },
-  Blunder: { sym: '??', text: 'Blunder', good: false, color: '#e5513f' },
+  Brilliant: { sym: '!!', text: 'Brilliant', good: true, color: 'var(--color-mark-brilliant)' },
+  Best: { sym: '★', text: 'Best', good: true, color: 'var(--color-mark-best)' },
+  Good: { sym: '✓', text: 'Good', good: true, color: 'var(--color-mark-good)' },
+  Inaccuracy: { sym: '?!', text: 'Inaccuracy', good: false, color: 'var(--color-mark-inaccuracy)' },
+  Mistake: { sym: '?', text: 'Mistake', good: false, color: 'var(--color-mark-mistake)' },
+  Blunder: { sym: '??', text: 'Blunder', good: false, color: 'var(--color-mark-blunder)' },
 };
 
 /** How each reference player type is named for you, short names for the map, and what Otto does about it. */

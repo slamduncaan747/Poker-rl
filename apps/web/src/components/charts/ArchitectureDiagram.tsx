@@ -1,8 +1,8 @@
-const INK = '#e6e3dc';
-const DIM = '#8c929a';
-const LINE = '#5a5f66';
-const ACC = '#e8743b';
-const PAPER = '#15181b';
+const INK = 'var(--color-ink-100)';
+const DIM = 'var(--color-ink-400)';
+const LINE = 'var(--color-ink-500)';
+const ACC = 'var(--color-gold)';
+const PAPER = 'var(--color-ink-900)';
 const MONO = 'Chivo Mono, ui-monospace, monospace';
 const SANS = 'Chivo, ui-sans-serif, sans-serif';
 
