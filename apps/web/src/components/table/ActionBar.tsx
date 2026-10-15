@@ -10,6 +10,12 @@ const STEPS = 1000;
 const SNAP = 50;
 const NUDGE = DEFAULT_CONFIG.bigBlind;
 
+/** Round a bet to whole dollars within [min, max]; anything within half a dollar of all-in is all-in. */
+function snapTo(v: number, min: number, max: number) {
+  if (v >= max - SNAP / 2) return max;
+  return Math.min(max, Math.max(min, Math.round(v / SNAP) * SNAP));
+}
+
 const PRESETS: Array<{ label: string; key: string; frac: number | 'min' | 'all' }> = [
   { label: '½', key: '1', frac: 0.5 },
   { label: '¾', key: '2', frac: 0.75 },
@@ -48,8 +54,8 @@ export function ActionBar() {
   useEffect(() => {
     if (minTo !== null && state) {
       // default to a ~2/3 pot sizing
-      const def = Math.max(minTo, Math.min(maxTo, raiseToForFraction(state, 0.66)));
-      setTo(state.street === 0 && state.raisesThisStreet === 0 ? Math.max(minTo, Math.min(maxTo, 250)) : def);
+      const def = snapTo(raiseToForFraction(state, 0.66), minTo, maxTo);
+      setTo(state.street === 0 && state.raisesThisStreet === 0 ? snapTo(250, minTo, maxTo) : def);
     }
   }, [minTo, maxTo, state, state?.log.length]);
 
@@ -57,7 +63,7 @@ export function ActionBar() {
     if (!state || minTo === null) return 0;
     if (f === 'min') return minTo;
     if (f === 'all') return maxTo;
-    return Math.max(minTo, Math.min(maxTo, raiseToForFraction(state, f)));
+    return snapTo(raiseToForFraction(state, f), minTo, maxTo);
   };
 
   const raiseWord = state && state.street > 0 && state.streetBet[1 - HUMAN] === 0 ? 'Bet' : 'Raise to';
@@ -94,11 +100,7 @@ export function ActionBar() {
 
   // Quadratic scale: the slider spends most of its travel on the sizes people actually bet.
   const span = minTo !== null ? maxTo - minTo : 0;
-  const snap = (v: number) => {
-    if (minTo === null) return 0;
-    if (v >= maxTo - SNAP / 2) return maxTo;
-    return Math.min(maxTo, Math.max(minTo, Math.round(v / SNAP) * SNAP));
-  };
+  const snap = (v: number) => (minTo === null ? 0 : snapTo(v, minTo, maxTo));
   const toPos = (v: number) => (span > 0 && minTo !== null ? Math.round(Math.sqrt(Math.max(0, v - minTo) / span) * STEPS) : STEPS);
   const fromPos = (pos: number) => snap((minTo ?? 0) + span * (pos / STEPS) ** 2);
   const nudge = (dir: 1 | -1) => setTo((v) => snap(dir > 0 ? Math.floor(v / NUDGE) * NUDGE + NUDGE : Math.ceil(v / NUDGE) * NUDGE - NUDGE));
